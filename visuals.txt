@@ -1,0 +1,159 @@
+================================================================================
+SNOWPIERCER GAME — IMAGE GENERATION PROMPTS
+================================================================================
+Game context: 2D side-scrolling platformer set inside the Snowpiercer train.
+Player moves left/right, jumps, travels through 5 wagon interiors.
+All sprites must have a TRANSPARENT background (PNG).
+Style target: pixel art, 16-bit era, crisp edges, no anti-aliasing.
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+ASSET 1 — PLAYER SPRITE SHEET (player.png)
+────────────────────────────────────────────────────────────────────────────────
+
+Required layout:
+  - Each frame: 32 pixels wide × 64 pixels tall
+  - 3 rows, all frames in a single horizontal strip per row
+  - Row 0 (top):    IDLE    — 4 frames, character facing RIGHT
+  - Row 1 (middle): WALK    — 6 frames, character facing RIGHT
+  - Row 2 (bottom): JUMP    — 2 frames (frame 0 = rising, frame 1 = falling)
+  - Total sheet size: 192 × 192 pixels  (6 columns × 3 rows × 32×64)
+
+Character description:
+  A thin survivor wearing a worn dark coat, scarf, and boots. Pale cold skin.
+  Short dark hair. Snowpiercer / dystopian train passenger aesthetic.
+  Hunched slightly forward while walking. Clear silhouette at small size.
+
+PROMPT (Midjourney / DALL-E 3 / Stable Diffusion):
+
+  "2D pixel art sprite sheet of a dystopian train passenger character,
+  Snowpiercer aesthetic, worn dark coat and scarf, pale skin, dark hair,
+  3 rows of animation: top row 4-frame idle cycle facing right, middle row
+  6-frame walk cycle facing right, bottom row 2-frame jump (ascending then
+  falling), each frame 32x64 pixels, white or transparent background,
+  16-bit game sprite style, clean pixel art, no anti-aliasing, top-down
+  side view, consistent character design across all frames"
+
+Alternative shorter prompt:
+  "Pixel art game sprite sheet, side-scrolling platformer character,
+  dystopian survivor in dark coat and scarf, 3 animation rows: idle (4
+  frames), walk (6 frames), jump (2 frames), 32x64 pixels per frame,
+  facing right, transparent background, 16-bit style"
+
+Tip: Generate at 2x (64x128 per frame) then scale down to keep pixel clarity.
+
+
+────────────────────────────────────────────────────────────────────────────────
+ASSET 2 — WAGON FLOOR TILES (one per wagon theme)
+Each tile: 64 × 32 pixels, tileable horizontally, transparent background
+────────────────────────────────────────────────────────────────────────────────
+
+--- wagon0_floor.png — WAGON DES PAUVRES (Poor Wagon) ---
+Colors: dark brown, worn wood, rust
+PROMPT:
+  "Pixel art tileable floor texture, old worn wooden planks, dark brown
+  with visible grain and rust stains, cold dystopian train interior,
+  64x32 pixels, side view, seamless horizontal repeat, 16-bit game style,
+  transparent background"
+
+--- wagon1_floor.png — WAGON INDUSTRIE (Industry Wagon) ---
+Colors: dark grey steel, green industrial accents, grating texture
+PROMPT:
+  "Pixel art tileable floor texture, industrial metal grating, dark steel
+  grey with green warning stripe accents, factory/train floor,
+  64x32 pixels, side view, seamless horizontal repeat, 16-bit game style,
+  transparent background"
+
+--- wagon2_floor.png — WAGON AQUARIUM (Aquarium Wagon) ---
+Colors: dark blue, wet tile look, teal shimmer
+PROMPT:
+  "Pixel art tileable floor texture, wet dark blue ceramic tiles with
+  teal shimmer, aquarium or submarine corridor floor, small water droplet
+  details, 64x32 pixels, side view, seamless horizontal repeat,
+  16-bit game style, transparent background"
+
+--- wagon3_floor.png — WAGON JARDIN (Garden Wagon) ---
+Colors: dark earth brown, patches of moss, root textures
+PROMPT:
+  "Pixel art tileable floor texture, dark soil with patches of moss and
+  small roots, garden train wagon floor, earthy greens and browns,
+  64x32 pixels, side view, seamless horizontal repeat, 16-bit game style,
+  transparent background"
+
+--- wagon4_floor.png — WAGON LUXE (Luxury Wagon) ---
+Colors: deep red carpet, gold trim edge, ornate pattern
+PROMPT:
+  "Pixel art tileable floor texture, deep crimson carpet with gold trim
+  and subtle ornate pattern, luxury train car floor, rich and detailed,
+  64x32 pixels, side view, seamless horizontal repeat, 16-bit game style,
+  transparent background"
+
+
+────────────────────────────────────────────────────────────────────────────────
+ASSET 3 — OBSTACLE SPRITES (one per wagon theme, optional upgrade)
+Each: variable size matching obstacle rects in code, transparent background
+────────────────────────────────────────────────────────────────────────────────
+
+Obstacle sizes from the code (w × h):
+  Wagon 0 (Poor):     85×42 (crate), 100×22 (shelf), 85×42 (crate)
+  Wagon 1 (Industry): 55×90 (machine), 130×22 (pipe), 130×22 (pipe), 55×90
+  Wagon 2 (Aquarium): 115×18 (ledge), 140×18 (ledge), 115×18 (ledge)
+  Wagon 3 (Garden):   72×36 (bush), 95×18 (branch), 95×18 (branch), 72×36
+  Wagon 4 (Luxury):   105×18 (shelf), 110×18 (shelf), 105×18 (shelf)
+
+--- obstacle_poor.png — worn wooden crate ---
+PROMPT:
+  "Pixel art wooden crate, worn and battered, dark brown with metal
+  corner brackets, dystopian train aesthetic, 85x42 pixels,
+  transparent background, 16-bit game style"
+
+--- obstacle_industry.png — industrial machine/boiler ---
+PROMPT:
+  "Pixel art industrial boiler or machine unit, dark grey metal with
+  green warning lights, pipes and bolts visible, train engine room
+  aesthetic, 55x90 pixels, transparent background, 16-bit game style"
+
+--- obstacle_aquarium.png — glass ledge / coral shelf ---
+PROMPT:
+  "Pixel art glass and metal platform shelf, dark blue tint, small coral
+  and seaweed decorations on top, aquarium interior aesthetic,
+  115x18 pixels, transparent background, 16-bit game style"
+
+--- obstacle_garden.png — bush / plant cluster ---
+PROMPT:
+  "Pixel art dense bush with dark green leaves, overgrown train wagon
+  garden aesthetic, earthy and wild, 72x36 pixels, transparent
+  background, 16-bit game style"
+
+--- obstacle_luxury.png — ornate shelf ---
+PROMPT:
+  "Pixel art ornate wall shelf, dark wood with gold trim, small luxury
+  items on top (glass, candle), opulent train car aesthetic,
+  105x18 pixels, transparent background, 16-bit game style"
+
+
+────────────────────────────────────────────────────────────────────────────────
+NOTES FOR GENERATION
+────────────────────────────────────────────────────────────────────────────────
+
+1. MOST IMPORTANT: Generate player.png first — it has the biggest visual impact.
+
+2. For pixel art generators (Aseprite AI, PixelLab, etc.) set the palette
+   to 32 or 64 colors max for a consistent look across all assets.
+
+3. If using Midjourney: add "--no background, --no shadow" and request
+   PNG with alpha. Use "--ar 1:1" for tiles, "--ar 3:1" for floor strips.
+
+4. If the generator cannot produce transparent backgrounds, generate on a
+   flat magenta (#FF00FF) background — the code can use SDL colorkey to
+   remove it: SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(fmt, 255, 0, 255))
+
+5. Frame order for player.png walk cycle (Row 1, left to right):
+   [contact] [down] [passing] [up] [contact] [down]
+   Standard 6-frame walk — the character's weight should shift noticeably.
+
+6. Recommend tool: Piskel (free, browser-based) to assemble individual
+   frames into the sprite sheet after generation.
+
+================================================================================

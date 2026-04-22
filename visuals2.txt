@@ -1,0 +1,313 @@
+================================================================================
+SNOWPIERCER GAME — PHASE 2 IMAGE GENERATION PROMPTS
+================================================================================
+Game: 2D side-scrolling platformer, inside the Snowpiercer train.
+Window: 800x520 px. All PNGs must have transparent background unless stated.
+Style: dark gritty pixel art, 16-bit era, no anti-aliasing, consistent palette.
+Snowpiercer theme: frozen apocalypse, class warfare, industrial cold aesthetic.
+================================================================================
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 1 — PLAYER SPRITE SHEET  →  player.png
+════════════════════════════════════════════════════════════════════════════════
+
+Sheet layout:
+  • Frame size  : 48 px wide × 64 px tall
+  • All rows    : frames arranged LEFT to RIGHT in a horizontal strip
+  • File size   : 288 px wide × 448 px tall  (6 cols × 7 rows)
+  • Direction   : character always faces RIGHT (code will flip for left)
+
+  Row 0 — IDLE         : 4 frames — subtle breathing, coat shifting, eyes blinking
+  Row 1 — WALK         : 6 frames — walking right, weight shift, coat swaying
+  Row 2 — JUMP UP      : 2 frames — frame 0 = launch (legs bent), frame 1 = peak (arms up)
+  Row 3 — FALL         : 2 frames — frame 0 = falling (arms out), frame 1 = land (crouch)
+  Row 4 — SHOOT        : 3 frames — frame 0 = raise gun, frame 1 = fire (muzzle flash on fist), frame 2 = recoil
+  Row 5 — MELEE        : 4 frames — frame 0 = wind-up, frames 1-2 = swing arm forward, frame 3 = recovery
+  Row 6 — HIT / DEATH  : 4 frames — frame 0-1 = stagger backward, frame 2-3 = collapse to ground
+
+Character design:
+  Thin survivor, worn dark wool coat (near-black), red scarf, grey boots,
+  pale skin, short dark messy hair. Carries a makeshift pistol at hip.
+  Dystopian train passenger, lower-class Snowpiercer aesthetic.
+  Strong readable silhouette even at 48x64 px.
+
+PROMPT:
+  "2D pixel art sprite sheet, dystopian survivor character, Snowpiercer
+  train passenger, worn dark coat, red scarf, grey boots, pale skin,
+  dark messy hair, makeshift pistol, 7 animation rows: idle (4 frames),
+  walk right (6 frames), jump up (2 frames), fall (2 frames), shoot
+  (3 frames), melee punch/swing (4 frames), hit and death (4 frames),
+  each frame 48x64 pixels, transparent background, facing right,
+  16-bit pixel art style, dark gritty palette, clean silhouette"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 2 — PROJECTILE + MUZZLE FLASH  →  bullet.png  /  muzzle.png
+════════════════════════════════════════════════════════════════════════════════
+
+--- bullet.png ---
+  Single sprite, 16x6 px, transparent background.
+  A small elongated bullet / energy bolt — bright orange-white core with
+  a short warm glow trail. Horizontal, pointing RIGHT.
+
+PROMPT:
+  "2D pixel art bullet sprite, small elongated projectile 16x6 pixels,
+  bright orange-white hot core, short warm orange glow trail pointing left,
+  horizontal orientation facing right, transparent background, 16-bit
+  game style, high contrast against dark backgrounds"
+
+--- muzzle.png ---
+  Single sprite, 32x24 px, transparent background.
+  Muzzle flash — star-shaped burst of orange and white light.
+  Centered on the right half of the image (gun barrel exit point).
+
+PROMPT:
+  "2D pixel art muzzle flash sprite, 32x24 pixels, star burst of orange
+  and white light, gun barrel flash effect, centered right side of image,
+  transparent background, 16-bit game style, bright orange core white tips"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 3 — MELEE HIT EFFECT  →  hit_effect.png
+════════════════════════════════════════════════════════════════════════════════
+
+  Sprite sheet: 4 frames horizontal strip, each frame 48x48 px → 192x48 total.
+  Impact animation: small explosion of white/yellow impact stars and lines.
+  Frame 0 = small burst, frame 1 = peak burst, frame 2 = spreading sparks,
+  frame 3 = fade out.
+
+PROMPT:
+  "2D pixel art hit impact effect sprite sheet, 4 frames horizontal strip,
+  each frame 48x48 pixels, white and yellow impact burst stars and lines,
+  comic-style melee hit effect, expanding then fading sparks, transparent
+  background, 16-bit game style, high contrast, punchy animation"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 4 — ENEMY TYPE 1 : TRAIN GUARD  →  enemy_guard.png
+════════════════════════════════════════════════════════════════════════════════
+
+Sheet layout:
+  • Frame size : 48x64 px
+  • File size  : 288x192 px  (6 cols × 3 rows)
+  • Direction  : always faces LEFT (toward player, code will flip as needed)
+
+  Row 0 — WALK  : 6 frames — armored guard marching left, heavy footsteps
+  Row 1 — ATTACK: 4 frames — raises baton and swings downward
+  Row 2 — DEATH : 4 frames — staggers then collapses
+
+Character design:
+  Snowpiercer train security guard. Black tactical uniform, grey chest armor
+  plate, black helmet with visor, heavy boots. Carries an electric baton.
+  Menacing silhouette, bulkier than the player. Cold industrial aesthetic.
+
+PROMPT:
+  "2D pixel art sprite sheet, Snowpiercer train security guard enemy,
+  black tactical uniform, grey chest armor, black helmet with visor,
+  electric baton weapon, 3 animation rows: walk left (6 frames), baton
+  attack swing (4 frames), death collapse (4 frames), each frame 48x64
+  pixels, transparent background, facing left, 16-bit pixel art, dark
+  gritty palette, bulky silhouette, more imposing than player character"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 5 — ENEMY TYPE 2 : WORKER BRAWLER  →  enemy_worker.png
+════════════════════════════════════════════════════════════════════════════════
+
+Sheet layout:
+  • Frame size : 40x56 px
+  • File size  : 240x168 px  (6 cols × 3 rows)
+  • Direction  : always faces LEFT
+
+  Row 0 — WALK  : 6 frames — hunched aggressive walk
+  Row 1 — ATTACK: 4 frames — lunges forward with fist/wrench
+  Row 2 — DEATH : 4 frames — falls backward
+
+Character design:
+  Lower-class train worker turned hostile. Dirty overalls, grey shirt,
+  work gloves, worn boots. Wielding a heavy wrench. Shorter and scrappier
+  than the guard. Angry desperate expression. Grime and soot stains visible.
+
+PROMPT:
+  "2D pixel art sprite sheet, angry train worker enemy character,
+  Snowpiercer lower class, dirty overalls, grey shirt, work gloves,
+  heavy wrench weapon, soot stains, 3 animation rows: hunched walk left
+  (6 frames), wrench attack lunge (4 frames), death fall backward (4 frames),
+  each frame 40x56 pixels, transparent background, facing left, 16-bit
+  pixel art, gritty dark palette, shorter scrappier than armored guard"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 6 — ENEMY TYPE 3 : ENFORCER (BOSS)  →  enemy_enforcer.png
+════════════════════════════════════════════════════════════════════════════════
+
+Sheet layout:
+  • Frame size : 64x80 px
+  • File size  : 384x240 px  (6 cols × 3 rows)
+  • Direction  : always faces LEFT
+
+  Row 0 — WALK  : 6 frames — slow heavy march
+  Row 1 — ATTACK: 6 frames — two-hit combo: grab then slam
+  Row 2 — DEATH : 4 frames (use 4 of the 6 cols) — slow dramatic fall
+
+Character design:
+  Elite Snowpiercer enforcer. Full black military armor with gold trim
+  (upper-class insignia), face-covering mask, large heavy frame.
+  No visible weapon — fights with armored fists and brute force.
+  Significantly taller and wider than regular guard. Intimidating.
+
+PROMPT:
+  "2D pixel art sprite sheet, elite enforcer boss enemy, Snowpiercer
+  upper-class military armor, full black armor with gold trim insignia,
+  face-covering mask, armored fists, massive imposing frame, 3 animation
+  rows: heavy march walk left (6 frames), two-hit grab and slam attack
+  (6 frames), slow dramatic death fall (4 frames), each frame 64x80 pixels,
+  transparent background, facing left, 16-bit pixel art, dark imposing
+  palette, much larger than regular enemies"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 7 — ENEMY HIT FLASH  →  (no image needed, done in code with color mod)
+ENEMY HEALTH BAR   →  (no image needed, drawn as SDL rects in code)
+════════════════════════════════════════════════════════════════════════════════
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 8 — WAGON INTERIOR BACKGROUNDS (wall/atmosphere layer)
+════════════════════════════════════════════════════════════════════════════════
+
+Purpose: replaces the flat color backdrop in each wagon.
+Drawn FIRST before everything else. Must be dark enough that gameplay
+elements (player, enemies, obstacles) remain readable on top.
+Size: 800x520 px. NOT transparent (solid background image). JPG or PNG.
+
+The image covers the full screen. The code draws windows, floor, obstacles
+and the player on top. So the image should show:
+  - The upper portion (ceiling area, y=0 to y=42): rough ceiling texture
+  - The walls (left strip x=0 to x=22, right strip x=778 to x=800): wall panels
+  - The main mid area (between ceiling and floor): atmospheric wall detail,
+    pipes/panels/decorations appropriate to wagon theme
+  - Leave the two window areas roughly blank/dark (they get drawn over anyway)
+  - Leave the floor area (bottom 80px) blank/dark (floor texture drawn on top)
+
+--- wagon0_bg.png — WAGON DES PAUVRES ---
+  Dark brown rotting wood panels, exposed rusted metal beams, torn cloth
+  hanging from the ceiling, stacked junk and rags in corners, dim warm
+  flickering light, poverty and desperation atmosphere.
+  Snowpiercer tail section.
+
+PROMPT:
+  "2D pixel art interior background, Snowpiercer poverty wagon, dark brown
+  rotting wood wall panels, exposed rusted metal support beams, torn dirty
+  cloth hanging from ceiling, piles of rags and junk in corners, dim warm
+  orange flickering light, desperate poverty atmosphere, 800x520 pixels,
+  no transparent areas, dark gritty 16-bit pixel art style, suitable as
+  game background layer"
+
+--- wagon1_bg.png — WAGON INDUSTRIE ---
+  Dark grey industrial steel walls, large pipes running horizontally along
+  the top and sides, warning stripe tape (yellow/black), pressure gauges
+  and valves on walls, steam vents, green emergency lighting,
+  machine room / boiler room feeling.
+
+PROMPT:
+  "2D pixel art interior background, Snowpiercer industrial engine wagon,
+  dark grey steel walls, large pipes running along ceiling and walls,
+  yellow-black warning stripes, pressure gauges and valve handles mounted
+  on walls, steam rising from vents, green emergency lighting glow,
+  industrial boiler room atmosphere, 800x520 pixels, no transparent areas,
+  dark gritty 16-bit pixel art style, game background layer"
+
+--- wagon2_bg.png — WAGON AQUARIUM ---
+  Deep dark blue walls lined with large glass aquarium tanks full of
+  glowing bioluminescent sea life. Water reflections rippling on ceiling.
+  Dark blue-green ambient light, coral shapes visible, eerie underwater glow.
+  Surreal luxury of the Snowpiercer aquarium car.
+
+PROMPT:
+  "2D pixel art interior background, Snowpiercer aquarium wagon, deep dark
+  navy blue walls, large illuminated glass aquarium panels with glowing
+  bioluminescent fish and coral, water light reflections rippling on the
+  ceiling, dark teal-blue ambient glow, mysterious underwater atmosphere,
+  800x520 pixels, no transparent areas, dark rich 16-bit pixel art style,
+  game background layer"
+
+--- wagon3_bg.png — WAGON JARDIN ---
+  Dark green walls overgrown with climbing vines and moss, large tropical
+  leaves hanging from above, wooden planter boxes along the walls,
+  warm grow-light glow from above, earthy damp atmosphere, small fairy
+  lights strung between plants, wildly overgrown.
+
+PROMPT:
+  "2D pixel art interior background, Snowpiercer garden greenhouse wagon,
+  dark green walls covered in climbing vines and moss, large tropical leaves
+  hanging from ceiling, wooden planter boxes along walls, warm orange
+  grow-lamp glow from above, small fairy lights between plants,
+  earthy lush overgrown atmosphere, 800x520 pixels, no transparent areas,
+  dark green 16-bit pixel art style, game background layer"
+
+--- wagon4_bg.png — WAGON LUXE ---
+  Deep crimson and dark gold ornate walls, wood panelling with gold trim,
+  chandeliers casting warm golden light, velvet drapes framing the sides,
+  oil painting frames mounted on walls, rich upper-class opulence.
+  Stark contrast to the other wagons. Arrogant wealth aesthetic.
+
+PROMPT:
+  "2D pixel art interior background, Snowpiercer luxury first-class wagon,
+  deep crimson walls with dark wood panelling and gold trim molding,
+  small ornate chandeliers casting warm golden light, velvet curtain drapes
+  on sides, framed oil paintings on walls, opulent upper-class atmosphere,
+  800x520 pixels, no transparent areas, rich dark red-gold 16-bit pixel
+  art style, game background layer"
+
+
+════════════════════════════════════════════════════════════════════════════════
+SECTION 9 — OUTSIDE WINDOW PARALLAX  →  outside_bg.png
+════════════════════════════════════════════════════════════════════════════════
+
+Purpose: scrolls horizontally behind the wagon windows for the parallax
+effect (replaces current platefixe.png).
+Size: 1600x200 px (wide, only top portion is sampled by the window code).
+Must tile/wrap seamlessly left-to-right.
+
+PROMPT:
+  "2D pixel art seamless horizontal scrolling background, snowy frozen
+  tundra seen from a speeding train window at night, dark stormy sky with
+  heavy blizzard snow, distant frozen mountains, blurred snow-covered
+  ground rushing past, occasional frozen tree silhouettes, cold blue-grey
+  palette, 1600x200 pixels, tileable/seamless left-to-right edges,
+  16-bit game style, no UI elements, motion blur on ground layer"
+
+
+════════════════════════════════════════════════════════════════════════════════
+NOTES FOR GENERATION
+════════════════════════════════════════════════════════════════════════════════
+
+PRIORITY ORDER (implement in this order):
+  1. player.png          — enables all movement + combat animation
+  2. wagon0_bg.png through wagon4_bg.png  — biggest visual upgrade
+  3. outside_bg.png      — improves window parallax
+  4. enemy_guard.png     — first enemy type in code
+  5. enemy_worker.png    — second enemy type
+  6. bullet.png          — needed for shooting system
+  7. hit_effect.png      — melee visual feedback
+  8. muzzle.png          — polish on shooting
+  9. enemy_enforcer.png  — boss, implement last
+
+TECHNICAL NOTES FOR WHEN CODING BEGINS:
+  Player frame size 48x64 chosen because:
+    - JOUEUR_W=28 and JOUEUR_H=48 are collision box dimensions
+    - Sprite will be drawn slightly larger than the hitbox (common in 2D games)
+    - Hitbox stays 28x48, sprite drawn centered on it at 48x64
+
+  Enemy collision boxes will be:
+    - Guard:    36x60 (sprite 48x64)
+    - Worker:   30x52 (sprite 40x56)
+    - Enforcer: 52x72 (sprite 64x80)
+
+  If the generator can't do transparent backgrounds:
+    Use flat magenta (#FF00FF) background.
+    Code will use SDL_SetColorKey to make it transparent.
+
+================================================================================
