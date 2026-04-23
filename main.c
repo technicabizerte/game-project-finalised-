@@ -15,6 +15,7 @@
 #define ETAT_SELECTION  4
 #define ETAT_SAUVEGARDE 5
 #define ETAT_MENU       6
+#define ETAT_OPTIONS    7
 
 typedef struct {
     const char *nom;
@@ -61,6 +62,22 @@ static void afficherTexteCentre(SDL_Renderer *r, TTF_Font *p, const char *txt,
     SDL_FreeSurface(s);
 }
 
+static void afficherTexteCentreRect(SDL_Renderer *r, TTF_Font *p,
+                                     const char *txt, SDL_Color c,
+                                     SDL_Rect rect)
+{
+    if (!p) return;
+    SDL_Surface *s = TTF_RenderUTF8_Blended(p, txt, c);
+    if (!s) return;
+    SDL_Texture *t = SDL_CreateTextureFromSurface(r, s);
+    SDL_Rect dst = {rect.x + (rect.w - s->w)/2,
+                    rect.y + (rect.h - s->h)/2,
+                    s->w, s->h};
+    SDL_RenderCopy(r, t, NULL, &dst);
+    SDL_DestroyTexture(t);
+    SDL_FreeSurface(s);
+}
+
 static void afficherTexteColonne(SDL_Renderer *r, TTF_Font *p, const char *txt,
                                   SDL_Color c, int col_x, int col_w, int y)
 {
@@ -93,6 +110,7 @@ int main(int argc, char *argv[])
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W_ECRAN, H_ECRAN, 0);
     SDL_Renderer *renderer = SDL_CreateRenderer(fenetre, -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_RenderSetLogicalSize(renderer, W_ECRAN, H_ECRAN);
 
     TTF_Font *police = NULL;
     const char *polices[] = {
@@ -133,6 +151,7 @@ int main(int argc, char *argv[])
     destructibles_init(&bg, renderer);
     background_initialiserSon(&bg, "son.mp3");
     Mix_PlayMusic(bg.son, -1);
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 
     wagonsInterieurs_init(&bg, renderer);
     neige_init(&bg);
@@ -155,6 +174,9 @@ int main(int argc, char *argv[])
     static int sauvegardeScreen   = 0;   /* 0 = screen A, 1 = screen B */
     static int sauvegardeSelected = 0;   /* 0 = left btn, 1 = right btn */
     static int menuSelected       = 0;   /* 0..4 highlighted main-menu button */
+    static int optionsSelected    = 0;   /* 0..4: 0=Vol-, 1=Vol+, 2=Normal, 3=Fullscreen, 4=Retour */
+    static int volumeLevel        = MIX_MAX_VOLUME / 2;   /* 0..128 */
+    static int fullscreenMode     = 0;   /* 0 = windowed, 1 = fullscreen */
 
     while (continuer) {
 
@@ -284,7 +306,7 @@ int main(int argc, char *argv[])
                     if (k == SDLK_RETURN) {
                         switch (menuSelected) {
                             case 0: etat = ETAT_SAUVEGARDE; break;
-                            case 1: fprintf(stderr, "[MENU] Options a venir\n"); break;
+                            case 1: etat = ETAT_OPTIONS; break;
                             case 2: etat = ETAT_SCORES; break;
                             case 3: fprintf(stderr, "[MENU] Histoire a venir\n"); break;
                             case 4: continuer = 0; break;
@@ -293,12 +315,84 @@ int main(int argc, char *argv[])
 
                     /* Direct keyboard shortcuts */
                     if (k == SDLK_j) { menuSelected = 0; etat = ETAT_SAUVEGARDE; }
-                    if (k == SDLK_o) { menuSelected = 1;
-                        fprintf(stderr, "[MENU] Options a venir\n"); }
+                    if (k == SDLK_o) { menuSelected = 1; etat = ETAT_OPTIONS; }
                     if (k == SDLK_m) { menuSelected = 2; etat = ETAT_SCORES; }
                     if (k == SDLK_h) { menuSelected = 3;
                         fprintf(stderr, "[MENU] Histoire a venir\n"); }
                     if (k == SDLK_ESCAPE) continuer = 0;
+                }
+                else if (etat == ETAT_OPTIONS) {
+                    SDL_Keycode k = ev.key.keysym.sym;
+
+                    /* 2D navigation — Volume row (0,1), Mode row (2,3), Retour (4). */
+                    if (k == SDLK_UP || k == SDLK_w) {
+                        if (optionsSelected == 4) optionsSelected = 2;
+                        else if (optionsSelected >= 2) optionsSelected -= 2;
+                    }
+                    if (k == SDLK_DOWN || k == SDLK_s) {
+                        if (optionsSelected <= 1) optionsSelected += 2;
+                        else if (optionsSelected <= 3) optionsSelected = 4;
+                    }
+                    if (k == SDLK_LEFT || k == SDLK_a) {
+                        if (optionsSelected == 1) optionsSelected = 0;
+                        else if (optionsSelected == 3) optionsSelected = 2;
+                    }
+                    if (k == SDLK_RIGHT || k == SDLK_d) {
+                        if (optionsSelected == 0) optionsSelected = 1;
+                        else if (optionsSelected == 2) optionsSelected = 3;
+                    }
+
+                    /* Enter triggers action on selected control */
+                    if (k == SDLK_RETURN) {
+                        switch (optionsSelected) {
+                            case 0:
+                                volumeLevel -= 16;
+                                if (volumeLevel < 0) volumeLevel = 0;
+                                Mix_VolumeMusic(volumeLevel);
+                                break;
+                            case 1:
+                                volumeLevel += 16;
+                                if (volumeLevel > MIX_MAX_VOLUME) volumeLevel = MIX_MAX_VOLUME;
+                                Mix_VolumeMusic(volumeLevel);
+                                break;
+                            case 2:
+                                fullscreenMode = 0;
+                                SDL_SetWindowFullscreen(fenetre, 0);
+                                break;
+                            case 3:
+                                fullscreenMode = 1;
+                                SDL_SetWindowFullscreen(fenetre, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                                break;
+                            case 4:
+                                etat = ETAT_MENU;
+                                break;
+                        }
+                    }
+
+                    /* Direct shortcuts per cahier des charges */
+                    if (k == SDLK_PLUS || k == SDLK_EQUALS || k == SDLK_KP_PLUS) {
+                        volumeLevel += 16;
+                        if (volumeLevel > MIX_MAX_VOLUME) volumeLevel = MIX_MAX_VOLUME;
+                        Mix_VolumeMusic(volumeLevel);
+                        optionsSelected = 1;
+                    }
+                    if (k == SDLK_MINUS || k == SDLK_KP_MINUS) {
+                        volumeLevel -= 16;
+                        if (volumeLevel < 0) volumeLevel = 0;
+                        Mix_VolumeMusic(volumeLevel);
+                        optionsSelected = 0;
+                    }
+                    if (k == SDLK_f) {
+                        fullscreenMode = 1;
+                        SDL_SetWindowFullscreen(fenetre, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                        optionsSelected = 3;
+                    }
+                    if (k == SDLK_n) {
+                        fullscreenMode = 0;
+                        SDL_SetWindowFullscreen(fenetre, 0);
+                        optionsSelected = 2;
+                    }
+                    if (k == SDLK_ESCAPE) etat = ETAT_MENU;
                 }
             }
             else if (ev.type == SDL_KEYUP) {
@@ -716,6 +810,88 @@ int main(int argc, char *argv[])
             afficherTexteCentre(renderer, police,
                 "[^/v] Naviguer  [ENTREE] Valider  [J/O/M/H] Raccourcis  [ECHAP] Quitter",
                 hintCol, H_ECRAN - 25);
+
+        } else if (etat == ETAT_OPTIONS) {
+            /* Vertical gradient background: (10,45,90) top -> (5,10,25) bottom */
+            for (int i = 0; i < H_ECRAN; i++) {
+                float t = (float)i / (float)H_ECRAN;
+                Uint8 r = (Uint8)(10 * (1.0f - t) +  5 * t);
+                Uint8 g = (Uint8)(45 * (1.0f - t) + 10 * t);
+                Uint8 b = (Uint8)(90 * (1.0f - t) + 25 * t);
+                SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+                SDL_RenderDrawLine(renderer, 0, i, W_ECRAN - 1, i);
+            }
+
+            SDL_Color jauneOpt = {255, 215,   0, 255};
+            SDL_Color blancOpt = {255, 255, 255, 255};
+            SDL_Color hintOpt  = {180, 190, 210, 255};
+            TTF_Font *titleFont = policeGrande ? policeGrande : police;
+
+            /* Title */
+            afficherTexteCentre(renderer, titleFont, "OPTIONS", jauneOpt, 50);
+
+            /* Group 1 — VOLUME */
+            afficherTexte(renderer, police, "VOLUME", blancOpt, 100, 150);
+            char vbuf[32];
+            snprintf(vbuf, sizeof(vbuf), "%d %%", volumeLevel * 100 / 128);
+            afficherTexte(renderer, police, vbuf, blancOpt, 250, 150);
+
+            /* Volume bar */
+            SDL_SetRenderDrawColor(renderer, 40, 40, 60, 255);
+            SDL_Rect volBg = {100, 185, 400, 10};
+            SDL_RenderFillRect(renderer, &volBg);
+            SDL_SetRenderDrawColor(renderer, 60, 180, 220, 255);
+            SDL_Rect volFg = {100, 185, volumeLevel * 400 / 128, 10};
+            SDL_RenderFillRect(renderer, &volFg);
+
+            /* Group 2 — MODE D'AFFICHAGE */
+            afficherTexte(renderer, police, "MODE D'AFFICHAGE", blancOpt, 100, 290);
+            afficherTexte(renderer, police,
+                fullscreenMode == 0 ? "Normal" : "Plein ecran",
+                blancOpt, 320, 290);
+
+            /* Five buttons */
+            SDL_Rect buttons[5] = {
+                {100, 215, 150, 40},                /* 0: DIMINUER */
+                {280, 215, 150, 40},                /* 1: AUGMENTER */
+                {100, 330, 150, 40},                /* 2: NORMAL */
+                {280, 330, 150, 40},                /* 3: PLEIN ECRAN */
+                {(W_ECRAN - 200) / 2, 420, 200, 45} /* 4: RETOUR */
+            };
+            const char *btnLabels[5] = {
+                "-", "+", "NORMAL", "PLEIN ECRAN", "RETOUR"
+            };
+
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            for (int i = 0; i < 5; i++) {
+                SDL_Rect btn = buttons[i];
+                int isSelected = (i == optionsSelected);
+
+                if (isSelected) {
+                    SDL_SetRenderDrawColor(renderer, 230, 140, 50, 240);
+                    SDL_RenderFillRect(renderer, &btn);
+                    SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
+                    SDL_RenderDrawRect(renderer, &btn);
+                    SDL_Rect inner = {btn.x+1, btn.y+1, btn.w-2, btn.h-2};
+                    SDL_RenderDrawRect(renderer, &inner);
+                } else {
+                    SDL_SetRenderDrawColor(renderer, 30, 50, 80, 220);
+                    SDL_RenderFillRect(renderer, &btn);
+                    SDL_SetRenderDrawColor(renderer, 100, 110, 140, 255);
+                    SDL_RenderDrawRect(renderer, &btn);
+                }
+
+                SDL_Color txtCol = isSelected
+                    ? (SDL_Color){255, 255, 255, 255}
+                    : (SDL_Color){200, 210, 230, 255};
+                afficherTexteCentreRect(renderer, police, btnLabels[i], txtCol, btn);
+            }
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+            /* Bottom instruction */
+            afficherTexteCentre(renderer, police,
+                "[^/v/</>] Naviguer  [ENTREE] Valider  [+/-/F/N] Raccourcis  [ECHAP] Retour",
+                hintOpt, H_ECRAN - 25);
         }
 
         SDL_RenderPresent(renderer);
