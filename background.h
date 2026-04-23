@@ -326,4 +326,6 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
 int sauvegarder_partie(const Background *bg, int scoreJoueur, Uint32 tempsDepart);
 int charger_partie(Background *bg, int *scoreJoueur, Uint32 *tempsDepart);
 
+extern int g_avatarTint[NB_JOUEURS_MAX];  /* 0 = none, 1 = bluish */
+
 #endif

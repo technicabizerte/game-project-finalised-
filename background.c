@@ -902,9 +902,9 @@ void joueur_afficher_interieur_idx(Background *bg, SDL_Renderer *renderer,
         int dy = (int)j->y  + JOUEUR_H - PLAYER_DRAW_H;
         SDL_Rect dst = {dx, dy, PLAYER_DRAW_W, PLAYER_DRAW_H};
         SDL_RendererFlip flip = (j->direction == -1) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-        if (idx == 1) SDL_SetTextureColorMod(bg->playerSheet, 180, 210, 255);
+        if (g_avatarTint[idx] == 1) SDL_SetTextureColorMod(bg->playerSheet, 180, 210, 255);
         SDL_RenderCopyEx(renderer, bg->playerSheet, &src, &dst, 0, NULL, flip);
-        if (idx == 1) SDL_SetTextureColorMod(bg->playerSheet, 255, 255, 255);
+        SDL_SetTextureColorMod(bg->playerSheet, 255, 255, 255);
     } else {
         /* Fallback: colored rectangles */
         SDL_Rect dest = {(int)j->x + ox, (int)j->y, j->w, j->h};
