@@ -13,8 +13,10 @@
 
 static int keysHeld[323] = {0};
 /* one-shot flags set on keydown, consumed each frame */
-static int keyShoot = 0;
-static int keyMelee = 0;
+static int keyShoot  = 0;
+static int keyMelee  = 0;
+static int keyShoot2 = 0;
+static int keyMelee2 = 0;
 
 static void afficherTexte(SDL_Renderer *r, TTF_Font *p, const char *txt,
                            SDL_Color c, int x, int y)
@@ -104,8 +106,10 @@ int main(int argc, char *argv[])
         if (dt > 0.05f) dt = 0.05f;
         lastTick = nowTick;
 
-        keyShoot = 0;
-        keyMelee = 0;
+        keyShoot  = 0;
+        keyMelee  = 0;
+        keyShoot2 = 0;
+        keyMelee2 = 0;
 
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
@@ -117,8 +121,10 @@ int main(int argc, char *argv[])
                         bg.fenetreguide.visible = !bg.fenetreguide.visible;
                     if (ev.key.keysym.sym == SDLK_F1) etat = ETAT_SCORES;
                     if (ev.key.keysym.sym == SDLK_n)  etat = ETAT_SAISIE;
-                    if (ev.key.keysym.sym == SDLK_f)  keyShoot = 1;
-                    if (ev.key.keysym.sym == SDLK_e)  keyMelee = 1;
+                    if (ev.key.keysym.sym == SDLK_f)  keyShoot  = 1;
+                    if (ev.key.keysym.sym == SDLK_e)  keyMelee  = 1;
+                    if (ev.key.keysym.sym == SDLK_k)  keyShoot2 = 1;
+                    if (ev.key.keysym.sym == SDLK_l)  keyMelee2 = 1;
                 }
                 if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE)
                     etat = ETAT_JEU;
@@ -129,21 +135,27 @@ int main(int argc, char *argv[])
         }
 
         if (etat == ETAT_JEU) {
-            int gauche = keysHeld[SDLK_a     & 0x1FF] || keysHeld[SDLK_LEFT  & 0x1FF];
-            int droite = keysHeld[SDLK_d     & 0x1FF] || keysHeld[SDLK_RIGHT & 0x1FF];
-            int sauter = keysHeld[SDLK_SPACE & 0x1FF] || keysHeld[SDLK_w    & 0x1FF]
-                      || keysHeld[SDLK_UP    & 0x1FF];
+            int gauche = keysHeld[SDLK_a     & 0x1FF];
+            int droite = keysHeld[SDLK_d     & 0x1FF];
+            int sauter = keysHeld[SDLK_SPACE & 0x1FF] || keysHeld[SDLK_w & 0x1FF];
 
             joueur_update_interieur(&bg, gauche, droite, sauter, keyShoot, keyMelee, dt);
+
+            int g2 = keysHeld[SDLK_LEFT  & 0x1FF];
+            int d2 = keysHeld[SDLK_RIGHT & 0x1FF];
+            int s2 = keysHeld[SDLK_UP    & 0x1FF];
+            if (bg.nbJoueursActifs >= 2)
+                joueur_update_interieur_idx(&bg, 1, g2, d2, s2, keyShoot2, keyMelee2, dt);
 
             /* Update combat systems */
             ennemis_update(bg.ennemis, &bg.nbEnnemis, bg.wagonActif, dt,
                            bg.joueurs, bg.nbJoueursActifs,
                            WAGON_SOL_Y, WAGON_PLAF_Y);
-            balles_update(bg.balles[0], &bg.nbBalles[0],
-                          bg.ennemis, &bg.nbEnnemis,
-                          &bg.joueurs[0].hp, &bg.joueurs[0].etat, &bg.joueurs[0].anim,
-                          bg.joueurs[0].x, bg.joueurs[0].y, bg.joueurs[0].w, bg.joueurs[0].h);
+            for (int p = 0; p < bg.nbJoueursActifs; p++)
+                balles_update(bg.balles[p], &bg.nbBalles[p],
+                              bg.ennemis, &bg.nbEnnemis,
+                              &bg.joueurs[p].hp, &bg.joueurs[p].etat, &bg.joueurs[p].anim,
+                              bg.joueurs[p].x, bg.joueurs[p].y, bg.joueurs[p].w, bg.joueurs[p].h);
             hitfx_update(bg.hitFx, &bg.nbHitFx, dt);
 
             transitionSlide_update(&bg);
@@ -190,7 +202,11 @@ int main(int argc, char *argv[])
             SDL_RenderDrawLine(renderer, 0, H_ECRAN-46, W_ECRAN, H_ECRAN-46);
 
             char buf[64];
-            snprintf(buf, sizeof(buf), "Score : %d   PV : %d", scoreJoueur, bg.joueurs[0].hp);
+            if (bg.nbJoueursActifs >= 2)
+                snprintf(buf, sizeof(buf), "Score : %d   PV1 : %d   PV2 : %d",
+                         scoreJoueur, bg.joueurs[0].hp, bg.joueurs[1].hp);
+            else
+                snprintf(buf, sizeof(buf), "Score : %d   PV : %d", scoreJoueur, bg.joueurs[0].hp);
             afficherTexte(renderer, police, buf, jaune, 15, H_ECRAN-42);
 
             const char *noms[MAX_WAGONS] = {

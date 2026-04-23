@@ -432,7 +432,7 @@ void wagonsInterieurs_init(Background *bg, SDL_Renderer *renderer)
     bg->wagonActif = 0;
     bg->parallaxOffset = 0.0f;
     bg->transitionSlide.actif = 0;
-    bg->nbJoueursActifs = 1;
+    bg->nbJoueursActifs = 2;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -846,11 +846,27 @@ void joueur_afficher_interieur_idx(Background *bg, SDL_Renderer *renderer,
         SDL_RendererFlip mflip = (j->direction == -1) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
         SDL_RenderCopyEx(renderer, bg->muzzleTex, NULL, &mdst, 0, NULL, mflip);
     }
+
+    /* HP bar above head */
+    if (j->hp > 0) {
+        int barW   = JOUEUR_W + 12;
+        int filled = (j->hp * barW) / JOUEUR_MAX_HP;
+        int bx     = (int)j->x + ox + JOUEUR_W/2 - barW/2;
+        int by     = (int)j->y - 10;
+        SDL_Rect bgBar = {bx, by, barW, 4};
+        SDL_Rect fgBar = {bx, by, filled, 4};
+        SDL_SetRenderDrawColor(renderer, 20, 40, 20, 255);
+        SDL_RenderFillRect(renderer, &bgBar);
+        SDL_SetRenderDrawColor(renderer, 60, 220, 80, 255);
+        SDL_RenderFillRect(renderer, &fgBar);
+    }
 }
 
 void joueur_afficher_interieur(Background *bg, SDL_Renderer *renderer, int ox)
 {
     joueur_afficher_interieur_idx(bg, renderer, 0, ox);
+    if (bg->nbJoueursActifs >= 2)
+        joueur_afficher_interieur_idx(bg, renderer, 1, ox);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -899,7 +915,8 @@ void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
     if (!bg->transitionSlide.actif) {
         wagon_dessiner(bg, renderer, idx, 0);
         ennemis_afficher(bg->ennemis, bg->nbEnnemis, idx, renderer);
-        balles_afficher(bg->balles[0], bg->nbBalles[0], renderer, bg->bulletTex);
+        for (int p = 0; p < bg->nbJoueursActifs; p++)
+            balles_afficher(bg->balles[p], bg->nbBalles[p], renderer, bg->bulletTex);
         hitfx_afficher(bg->hitFx, bg->nbHitFx, renderer);
         joueur_afficher_interieur(bg, renderer, 0);
     } else {
@@ -920,17 +937,6 @@ void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
     }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-    /* ── Player HP bar ── */
-    if (bg->joueurs[0].hp > 0) {
-        int barW   = 120;
-        int filled = (bg->joueurs[0].hp * barW) / JOUEUR_MAX_HP;
-        SDL_Rect bgBar = {14, H_ECRAN - 44, barW, 6};
-        SDL_Rect fgBar = {14, H_ECRAN - 44, filled, 6};
-        SDL_SetRenderDrawColor(renderer, 60, 20, 20, 255);
-        SDL_RenderFillRect(renderer, &bgBar);
-        SDL_SetRenderDrawColor(renderer, 220, 60, 60, 255);
-        SDL_RenderFillRect(renderer, &fgBar);
-    }
 }
 
 /* ═══════════════════════════════════════════════════
