@@ -84,6 +84,8 @@ typedef struct {
 typedef struct {
     char nom[64];
     int  score;
+    int  tempsSec;
+    int  wagonAtteint;
 } Score;
 
 typedef struct {
@@ -269,7 +271,8 @@ void scores_saisirNom(char *nom, int taille, SDL_Renderer *renderer,
                        TTF_Font *police, SDL_Color couleur);
 void scores_sauvegarder(const char *fichier, Score *scores, int nbScores);
 int  scores_charger(const char *fichier, Score *scores, int maxScores);
-void scores_ajouterEtTrier(Score *scores, int *nbScores, const char *nom, int score);
+void scores_ajouterEtTrier(Score *scores, int *nbScores, const char *nom, int score,
+                            int tempsSec, int wagonAtteint);
 void scores_afficherMenu(Score *scores, int nbScores, SDL_Renderer *renderer,
                           TTF_Font *police, SDL_Color couleur);
 

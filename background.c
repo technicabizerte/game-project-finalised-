@@ -190,21 +190,55 @@ void scores_saisirNom(char *nom, int taille, SDL_Renderer *renderer, TTF_Font *p
 }
 
 void scores_sauvegarder(const char *f, Score *scores, int nb)
-{ FILE*fp=fopen(f,"w"); if(!fp) return; fprintf(fp,"%d\n",nb); for(int i=0;i<nb;i++) fprintf(fp,"%s %d\n",scores[i].nom,scores[i].score); fclose(fp); }
+{
+    FILE *fp = fopen(f, "w"); if (!fp) return;
+    for (int i = 0; i < nb; i++)
+        fprintf(fp, "%s,%d,%d,%d\n", scores[i].nom, scores[i].score,
+                scores[i].tempsSec, scores[i].wagonAtteint);
+    fclose(fp);
+}
 
 int scores_charger(const char *f, Score *scores, int max)
 {
-    FILE*fp=fopen(f,"r"); if(!fp) return 0;
-    int nb=0; fscanf(fp,"%d\n",&nb); if(nb>max) nb=max;
-    for(int i=0;i<nb;i++) if(fscanf(fp,"%63s %d\n",scores[i].nom,&scores[i].score)!=2){nb=i;break;}
+    FILE *fp = fopen(f, "r"); if (!fp) return 0;
+    int nb = 0;
+    char line[256];
+    while (nb < max && fgets(line, sizeof(line), fp)) {
+        char nom[64] = ""; int s = 0, t = 0, w = 0;
+        if (sscanf(line, "%63[^,],%d,%d,%d", nom, &s, &t, &w) == 4) {
+            strncpy(scores[nb].nom, nom, 63);
+            scores[nb].nom[63]      = '\0';
+            scores[nb].score        = s;
+            scores[nb].tempsSec     = t;
+            scores[nb].wagonAtteint = w;
+            nb++;
+        }
+    }
     fclose(fp); return nb;
 }
 
-void scores_ajouterEtTrier(Score *scores, int *nb, const char *nom, int score)
+void scores_ajouterEtTrier(Score *scores, int *nb, const char *nom, int score,
+                            int tempsSec, int wagonAtteint)
 {
-    if(*nb<MAX_SCORES){strncpy(scores[*nb].nom,nom,63);scores[(*nb)++].score=score;}
-    else if(score>scores[MAX_SCORES-1].score){strncpy(scores[MAX_SCORES-1].nom,nom,63);scores[MAX_SCORES-1].score=score;}
-    for(int i=0;i<*nb-1;i++) for(int j=0;j<*nb-i-1;j++) if(scores[j].score<scores[j+1].score){Score t=scores[j];scores[j]=scores[j+1];scores[j+1]=t;}
+    if (*nb < MAX_SCORES) {
+        strncpy(scores[*nb].nom, nom, 63);
+        scores[*nb].nom[63]      = '\0';
+        scores[*nb].score        = score;
+        scores[*nb].tempsSec     = tempsSec;
+        scores[*nb].wagonAtteint = wagonAtteint;
+        (*nb)++;
+    } else if (score > scores[MAX_SCORES-1].score) {
+        strncpy(scores[MAX_SCORES-1].nom, nom, 63);
+        scores[MAX_SCORES-1].nom[63]      = '\0';
+        scores[MAX_SCORES-1].score        = score;
+        scores[MAX_SCORES-1].tempsSec     = tempsSec;
+        scores[MAX_SCORES-1].wagonAtteint = wagonAtteint;
+    }
+    for (int i = 0; i < *nb-1; i++)
+        for (int j = 0; j < *nb-i-1; j++)
+            if (scores[j].score < scores[j+1].score) {
+                Score t = scores[j]; scores[j] = scores[j+1]; scores[j+1] = t;
+            }
 }
 
 void scores_afficherMenu(Score *scores, int nb, SDL_Renderer *renderer, TTF_Font *police, SDL_Color couleur)

@@ -213,7 +213,8 @@ int main(int argc, char *argv[])
 
         if (etat == ETAT_SAISIE) {
             scores_saisirNom(nomJoueur, sizeof(nomJoueur), renderer, police, jaune);
-            scores_ajouterEtTrier(scores, &nbScores, nomJoueur, scoreJoueur);
+            scores_ajouterEtTrier(scores, &nbScores, nomJoueur, finalScore,
+                                  finalTimeSec, finalWagon);
             scores_sauvegarder(FICHIER_SCORES, scores, nbScores);
             etat = ETAT_SCORES;
         }
