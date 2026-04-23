@@ -146,8 +146,32 @@ int main(int argc, char *argv[])
                     if (ev.key.keysym.sym == SDLK_k)  keyShoot2 = 1;
                     if (ev.key.keysym.sym == SDLK_l)  keyMelee2 = 1;
                 }
-                if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE)
+                if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE) {
+                    bg.wagonActif = 0;
+                    bg.nbEnnemis  = 0;
+                    memset(bg.ennemis, 0, sizeof(bg.ennemis));
+                    bg.nbHitFx    = 0;
+                    memset(bg.hitFx, 0, sizeof(bg.hitFx));
+                    for (int rp = 0; rp < NB_JOUEURS_MAX; rp++) {
+                        bg.nbBalles[rp] = 0;
+                        memset(bg.balles[rp], 0, sizeof(bg.balles[rp]));
+                    }
+                    bg.transitionSlide.actif  = 0;
+                    bg.transitionSlide.offset = 0.0f;
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_WORKER,   580, WAGON_SOL_Y-WORKER_HBH,   0, bg.enemySheets[ET_WORKER]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    620, WAGON_SOL_Y-GUARD_HBH,    1, bg.enemySheets[ET_GUARD]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_WORKER,   530, WAGON_SOL_Y-WORKER_HBH,   1, bg.enemySheets[ET_WORKER]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    560, WAGON_SOL_Y-GUARD_HBH,    2, bg.enemySheets[ET_GUARD]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    640, WAGON_SOL_Y-GUARD_HBH,    2, bg.enemySheets[ET_GUARD]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_WORKER,   590, WAGON_SOL_Y-WORKER_HBH,   3, bg.enemySheets[ET_WORKER]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    550, WAGON_SOL_Y-GUARD_HBH,    3, bg.enemySheets[ET_GUARD]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_ENFORCER, 580, WAGON_SOL_Y-ENFORCER_HBH, 4, bg.enemySheets[ET_ENFORCER]);
+                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    650, WAGON_SOL_Y-GUARD_HBH,    4, bg.enemySheets[ET_GUARD]);
+                    joueur_init_interieur(&bg);
+                    scoreJoueur    = 0;
+                    bg.tempsDepart = SDL_GetTicks();
                     etat = ETAT_JEU;
+                }
                 if (etat == ETAT_GAMEOVER) {
                     if (ev.key.keysym.sym == SDLK_RETURN) etat = ETAT_SAISIE;
                     if (ev.key.keysym.sym == SDLK_ESCAPE) etat = ETAT_SCORES;
