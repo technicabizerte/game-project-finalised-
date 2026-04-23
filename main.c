@@ -10,6 +10,7 @@
 #define ETAT_JEU    0
 #define ETAT_SCORES 1
 #define ETAT_SAISIE 2
+#define ETAT_GAMEOVER 3
 
 static int keysHeld[323] = {0};
 /* one-shot flags set on keydown, consumed each frame */
@@ -26,6 +27,19 @@ static void afficherTexte(SDL_Renderer *r, TTF_Font *p, const char *txt,
     if (!s) return;
     SDL_Texture *t = SDL_CreateTextureFromSurface(r, s);
     SDL_Rect d = {x, y, s->w, s->h};
+    SDL_RenderCopy(r, t, NULL, &d);
+    SDL_DestroyTexture(t);
+    SDL_FreeSurface(s);
+}
+
+static void afficherTexteCentre(SDL_Renderer *r, TTF_Font *p, const char *txt,
+                                SDL_Color c, int y)
+{
+    if (!p) return;
+    SDL_Surface *s = TTF_RenderUTF8_Blended(p, txt, c);
+    if (!s) return;
+    SDL_Texture *t = SDL_CreateTextureFromSurface(r, s);
+    SDL_Rect d = {W_ECRAN/2 - s->w/2, y, s->w, s->h};
     SDL_RenderCopy(r, t, NULL, &d);
     SDL_DestroyTexture(t);
     SDL_FreeSurface(s);
@@ -65,6 +79,11 @@ int main(int argc, char *argv[])
     for (int i = 0; polices[i] && !police; i++)
         police = TTF_OpenFont(polices[i], 18);
 
+    TTF_Font *policeGrande = NULL;
+    for (int i = 0; polices[i] && !policeGrande; i++)
+        policeGrande = TTF_OpenFont(polices[i], 48);
+    if (!policeGrande) policeGrande = police;
+
     SDL_Color blanc   = {255, 255, 255, 255};
     SDL_Color jaune   = {255, 215,   0, 255};
     SDL_Color glacial = {140, 200, 255, 255};
@@ -98,6 +117,7 @@ int main(int argc, char *argv[])
     int etat      = ETAT_JEU;
     int continuer = 1;
     Uint32 lastTick = SDL_GetTicks();
+    int finalScore = 0, finalTimeSec = 0, finalWagon = 1;
 
     while (continuer) {
 
@@ -128,6 +148,10 @@ int main(int argc, char *argv[])
                 }
                 if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE)
                     etat = ETAT_JEU;
+                if (etat == ETAT_GAMEOVER) {
+                    if (ev.key.keysym.sym == SDLK_RETURN) etat = ETAT_SAISIE;
+                    if (ev.key.keysym.sym == SDLK_ESCAPE) etat = ETAT_SCORES;
+                }
             }
             else if (ev.type == SDL_KEYUP) {
                 keysHeld[ev.key.keysym.sym & 0x1FF] = 0;
@@ -175,6 +199,16 @@ int main(int argc, char *argv[])
             }
 
             scoreJoueur = (int)((SDL_GetTicks() - bg.tempsDepart) / 100);
+
+            int tousMorts = 1;
+            for (int p = 0; p < bg.nbJoueursActifs; p++)
+                if (bg.joueurs[p].hp > 0) { tousMorts = 0; break; }
+            if (tousMorts) {
+                etat         = ETAT_GAMEOVER;
+                finalScore   = scoreJoueur;
+                finalTimeSec = (int)((SDL_GetTicks() - bg.tempsDepart) / 1000);
+                finalWagon   = bg.wagonActif + 1;
+            }
         }
 
         if (etat == ETAT_SAISIE) {
@@ -220,6 +254,26 @@ int main(int argc, char *argv[])
                 "A/D:Marcher  ESPACE:Sauter  F:Tirer  E:Melee  G:Guide  F1:Scores",
                 blanc, 15, H_ECRAN-22);
 
+        } else if (etat == ETAT_GAMEOVER) {
+            wagonsInterieurs_afficher(&bg, renderer);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 60, 0, 0, 190);
+            SDL_Rect overlay = {0, 0, W_ECRAN, H_ECRAN};
+            SDL_RenderFillRect(renderer, &overlay);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+            SDL_Color rouge = {255, 60, 60, 255};
+            SDL_Color grisC = {180, 180, 180, 255};
+            char buf[128];
+            afficherTexteCentre(renderer, policeGrande, "GAME OVER", rouge, 120);
+            snprintf(buf, sizeof(buf), "Score final : %d", finalScore);
+            afficherTexteCentre(renderer, police, buf, blanc, 220);
+            snprintf(buf, sizeof(buf), "Temps : %02d:%02d", finalTimeSec/60, finalTimeSec%60);
+            afficherTexteCentre(renderer, police, buf, blanc, 250);
+            snprintf(buf, sizeof(buf), "Wagon atteint : %d/5", finalWagon);
+            afficherTexteCentre(renderer, police, buf, blanc, 280);
+            afficherTexteCentre(renderer, police,
+                "[ENTREE] Enregistrer votre score   [ECHAP] Menu des scores",
+                grisC, H_ECRAN - 60);
         } else if (etat == ETAT_SCORES) {
             background_afficher(&bg, renderer, MODE_MONO, 0, 0);
             scores_afficherMenu(scores, nbScores, renderer, police, blanc);
@@ -230,6 +284,7 @@ int main(int argc, char *argv[])
 
     scores_sauvegarder(FICHIER_SCORES, scores, nbScores);
     background_liberer(&bg);
+    if (policeGrande && policeGrande != police) TTF_CloseFont(policeGrande);
     if (police) TTF_CloseFont(police);
     Mix_CloseAudio();
     TTF_Quit(); IMG_Quit();
