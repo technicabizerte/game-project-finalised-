@@ -14,6 +14,7 @@
 #define ETAT_GAMEOVER   3
 #define ETAT_SELECTION  4
 #define ETAT_SAUVEGARDE 5
+#define ETAT_MENU       6
 
 typedef struct {
     const char *nom;
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
     int   scoreJoueur = 0;
     char  nomJoueur[64] = "";
 
-    int etat      = ETAT_SELECTION;
+    int etat      = ETAT_MENU;
     int continuer = 1;
     Uint32 lastTick = SDL_GetTicks();
     int finalScore = 0, finalTimeSec = 0, finalWagon = 1;
@@ -153,6 +154,7 @@ int main(int argc, char *argv[])
     static int p2Confirmed    = 0;
     static int sauvegardeScreen   = 0;   /* 0 = screen A, 1 = screen B */
     static int sauvegardeSelected = 0;   /* 0 = left btn, 1 = right btn */
+    static int menuSelected       = 0;   /* 0..4 highlighted main-menu button */
 
     while (continuer) {
 
@@ -186,30 +188,7 @@ int main(int argc, char *argv[])
                     }
                 }
                 if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE) {
-                    bg.wagonActif = 0;
-                    bg.nbEnnemis  = 0;
-                    memset(bg.ennemis, 0, sizeof(bg.ennemis));
-                    bg.nbHitFx    = 0;
-                    memset(bg.hitFx, 0, sizeof(bg.hitFx));
-                    for (int rp = 0; rp < NB_JOUEURS_MAX; rp++) {
-                        bg.nbBalles[rp] = 0;
-                        memset(bg.balles[rp], 0, sizeof(bg.balles[rp]));
-                    }
-                    bg.transitionSlide.actif  = 0;
-                    bg.transitionSlide.offset = 0.0f;
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_WORKER,   580, WAGON_SOL_Y-WORKER_HBH,   0, bg.enemySheets[ET_WORKER]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    620, WAGON_SOL_Y-GUARD_HBH,    1, bg.enemySheets[ET_GUARD]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_WORKER,   530, WAGON_SOL_Y-WORKER_HBH,   1, bg.enemySheets[ET_WORKER]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    560, WAGON_SOL_Y-GUARD_HBH,    2, bg.enemySheets[ET_GUARD]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    640, WAGON_SOL_Y-GUARD_HBH,    2, bg.enemySheets[ET_GUARD]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_WORKER,   590, WAGON_SOL_Y-WORKER_HBH,   3, bg.enemySheets[ET_WORKER]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    550, WAGON_SOL_Y-GUARD_HBH,    3, bg.enemySheets[ET_GUARD]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_ENFORCER, 580, WAGON_SOL_Y-ENFORCER_HBH, 4, bg.enemySheets[ET_ENFORCER]);
-                    ennemis_spawn(bg.ennemis, &bg.nbEnnemis, ET_GUARD,    650, WAGON_SOL_Y-GUARD_HBH,    4, bg.enemySheets[ET_GUARD]);
-                    joueur_init_interieur(&bg);
-                    scoreJoueur    = 0;
-                    bg.tempsDepart = SDL_GetTicks();
-                    etat = ETAT_JEU;
+                    etat = ETAT_MENU;
                 }
                 if (etat == ETAT_GAMEOVER) {
                     if (ev.key.keysym.sym == SDLK_RETURN) etat = ETAT_SAISIE;
@@ -250,15 +229,8 @@ int main(int argc, char *argv[])
                         etat = ETAT_JEU;
                     }
 
-                    /* Escape from selection = quit */
-                    if (ev.key.keysym.sym == SDLK_ESCAPE) continuer = 0;
-
-                    /* Temp test hotkey: L opens save/load menu */
-                    if (ev.key.keysym.sym == SDLK_l) {
-                        sauvegardeScreen   = 0;
-                        sauvegardeSelected = 0;
-                        etat = ETAT_SAUVEGARDE;
-                    }
+                    /* Escape from selection = back to main menu */
+                    if (ev.key.keysym.sym == SDLK_ESCAPE) etat = ETAT_MENU;
                 }
                 else if (etat == ETAT_SAUVEGARDE) {
                     if (ev.key.keysym.sym == SDLK_LEFT ||
@@ -296,8 +268,37 @@ int main(int argc, char *argv[])
                         if (sauvegardeScreen == 1)
                             sauvegardeScreen = 0;
                         else
-                            etat = ETAT_SELECTION;
+                            etat = ETAT_MENU;
                     }
+                }
+                else if (etat == ETAT_MENU) {
+                    SDL_Keycode k = ev.key.keysym.sym;
+
+                    /* Arrow navigation with wrap-around */
+                    if (k == SDLK_UP || k == SDLK_w)
+                        menuSelected = (menuSelected + 4) % 5;
+                    if (k == SDLK_DOWN || k == SDLK_s)
+                        menuSelected = (menuSelected + 1) % 5;
+
+                    /* Enter triggers currently-selected button */
+                    if (k == SDLK_RETURN) {
+                        switch (menuSelected) {
+                            case 0: etat = ETAT_SAUVEGARDE; break;
+                            case 1: fprintf(stderr, "[MENU] Options a venir\n"); break;
+                            case 2: etat = ETAT_SCORES; break;
+                            case 3: fprintf(stderr, "[MENU] Histoire a venir\n"); break;
+                            case 4: continuer = 0; break;
+                        }
+                    }
+
+                    /* Direct keyboard shortcuts */
+                    if (k == SDLK_j) { menuSelected = 0; etat = ETAT_SAUVEGARDE; }
+                    if (k == SDLK_o) { menuSelected = 1;
+                        fprintf(stderr, "[MENU] Options a venir\n"); }
+                    if (k == SDLK_m) { menuSelected = 2; etat = ETAT_SCORES; }
+                    if (k == SDLK_h) { menuSelected = 3;
+                        fprintf(stderr, "[MENU] Histoire a venir\n"); }
+                    if (k == SDLK_ESCAPE) continuer = 0;
                 }
             }
             else if (ev.type == SDL_KEYUP) {
@@ -653,6 +654,68 @@ int main(int argc, char *argv[])
             afficherTexteCentre(renderer, police,
                 "[<-/->] Naviguer  [ENTREE] Valider  [ECHAP] Retour",
                 gris2, H_ECRAN - 30);
+
+        } else if (etat == ETAT_MENU) {
+            SDL_Rect fullScreen = {0, 0, W_ECRAN, H_ECRAN};
+
+            /* Background: outside_bg.png stretched, or dark blue fallback */
+            if (bg.outsideBgTex) {
+                SDL_RenderCopy(renderer, bg.outsideBgTex, NULL, &fullScreen);
+            } else {
+                SDL_SetRenderDrawColor(renderer, 10, 15, 30, 255);
+                SDL_RenderFillRect(renderer, &fullScreen);
+            }
+
+            /* Dark overlay for readability */
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 140);
+            SDL_RenderFillRect(renderer, &fullScreen);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+            /* Title + subtitle */
+            SDL_Color jauneMenu = {255, 215, 0, 255};
+            SDL_Color blancMenu = {255, 255, 255, 255};
+            TTF_Font *titleFont = policeGrande ? policeGrande : police;
+            afficherTexteCentre(renderer, titleFont, "SNOWPIERCER", jauneMenu, 70);
+            afficherTexteCentre(renderer, police,    "LE JEU",      blancMenu, 135);
+
+            /* 5 buttons stacked, centered horizontally */
+            const char *menuLabels[5] = {
+                "JOUER", "OPTIONS", "MEILLEURS SCORES", "HISTOIRE", "QUITTER"
+            };
+            for (int i = 0; i < 5; i++) {
+                SDL_Rect btnRect = {250, 190 + i * 65, 300, 50};
+                int isSelected = (i == menuSelected);
+
+                if (isSelected) {
+                    /* Orange fill, yellow 2px border */
+                    SDL_SetRenderDrawColor(renderer, 230, 140, 50, 240);
+                    SDL_RenderFillRect(renderer, &btnRect);
+                    SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
+                    SDL_RenderDrawRect(renderer, &btnRect);
+                    SDL_Rect inner = {btnRect.x+1, btnRect.y+1,
+                                      btnRect.w-2, btnRect.h-2};
+                    SDL_RenderDrawRect(renderer, &inner);
+                } else {
+                    /* Dark blue fill, grey border */
+                    SDL_SetRenderDrawColor(renderer, 30, 40, 70, 220);
+                    SDL_RenderFillRect(renderer, &btnRect);
+                    SDL_SetRenderDrawColor(renderer, 100, 100, 130, 255);
+                    SDL_RenderDrawRect(renderer, &btnRect);
+                }
+
+                SDL_Color txtCol = isSelected
+                    ? (SDL_Color){255, 255, 255, 255}
+                    : (SDL_Color){200, 210, 230, 255};
+                int textY = btnRect.y + (btnRect.h - 22) / 2;
+                afficherTexteCentre(renderer, police, menuLabels[i], txtCol, textY);
+            }
+
+            /* Bottom instruction */
+            SDL_Color hintCol = {180, 190, 210, 255};
+            afficherTexteCentre(renderer, police,
+                "[^/v] Naviguer  [ENTREE] Valider  [J/O/M/H] Raccourcis  [ECHAP] Quitter",
+                hintCol, H_ECRAN - 25);
         }
 
         SDL_RenderPresent(renderer);
