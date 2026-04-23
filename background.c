@@ -743,6 +743,7 @@ void joueur_update_interieur_idx(Background *bg, int idx,
 
     j->velY += GRAVITE_JEU;
     if (j->velY > 18.0f) j->velY = 18.0f;
+    float xBeforeMove = j->x;
     j->x += j->velX;
     j->y += j->velY;
 
@@ -799,6 +800,17 @@ void joueur_update_interieur_idx(Background *bg, int idx,
     int rightStop = WAGON_MUR_D_X - (widx < MAX_WAGONS-1 ? WAGON_PORTE_W : 0) - j->w;
     if (j->x < (float)leftStop)  { j->x = (float)leftStop;  j->velX = 0.0f; }
     if (j->x > (float)rightStop) { j->x = (float)rightStop; j->velX = 0.0f; }
+
+    /* Player-player AABB — block X only, allow jumping over */
+    int other = idx ^ 1;
+    if (bg->nbJoueursActifs >= 2 && bg->joueurs[other].actif &&
+        bg->joueurs[other].hp > 0) {
+        SDL_Rect me    = {(int)j->x,           (int)j->y, JOUEUR_W, JOUEUR_H};
+        Joueur  *o     = &bg->joueurs[other];
+        SDL_Rect oRect = {(int)o->x,            (int)o->y, JOUEUR_W, JOUEUR_H};
+        if (SDL_HasIntersection(&me, &oRect))
+            j->x = xBeforeMove;
+    }
 }
 
 void joueur_update_interieur(Background *bg, int gauche, int droite,
@@ -821,7 +833,9 @@ void joueur_afficher_interieur_idx(Background *bg, SDL_Renderer *renderer,
         int dy = (int)j->y  + JOUEUR_H - PLAYER_DRAW_H;
         SDL_Rect dst = {dx, dy, PLAYER_DRAW_W, PLAYER_DRAW_H};
         SDL_RendererFlip flip = (j->direction == -1) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+        if (idx == 1) SDL_SetTextureColorMod(bg->playerSheet, 180, 210, 255);
         SDL_RenderCopyEx(renderer, bg->playerSheet, &src, &dst, 0, NULL, flip);
+        if (idx == 1) SDL_SetTextureColorMod(bg->playerSheet, 255, 255, 255);
     } else {
         /* Fallback: colored rectangles */
         SDL_Rect dest = {(int)j->x + ox, (int)j->y, j->w, j->h};
@@ -1011,6 +1025,24 @@ void minimap_afficher(Background *bg, SDL_Renderer *renderer)
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect pr = {px - 1, py - 1, 3, 3};
     SDL_RenderFillRect(renderer, &pr);
+
+    /* P2 cyan dot */
+    if (bg->nbJoueursActifs >= 2 && bg->joueurs[1].hp > 0) {
+        float p2fx = bg->joueurs[1].x + JOUEUR_W / 2.0f;
+        float p2fy = bg->joueurs[1].y + JOUEUR_H;
+        int p2x = MM_X + (int)((p2fx - WAGON_MUR_G_X) * (float)MM_W / WX);
+        int p2y = MM_Y + (int)((p2fy - WAGON_PLAF_Y)  * (float)MM_H / WY);
+        if (p2x < MM_X + 2)        p2x = MM_X + 2;
+        if (p2x > MM_X + MM_W - 3) p2x = MM_X + MM_W - 3;
+        if (p2y < MM_Y + 2)        p2y = MM_Y + 2;
+        if (p2y > MM_Y + MM_H - 3) p2y = MM_Y + MM_H - 3;
+        SDL_SetRenderDrawColor(renderer, 20, 40, 80, 255);
+        SDL_Rect p2o = {p2x - 2, p2y - 2, 5, 5};
+        SDL_RenderFillRect(renderer, &p2o);
+        SDL_SetRenderDrawColor(renderer, 60, 180, 220, 255);
+        SDL_Rect p2r = {p2x - 1, p2y - 1, 3, 3};
+        SDL_RenderFillRect(renderer, &p2r);
+    }
 }
 
 /* ═══ LIBÉRATION ═══ */
