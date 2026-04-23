@@ -7,10 +7,23 @@
 #include <string.h>
 #include "background.h"
 
-#define ETAT_JEU    0
-#define ETAT_SCORES 1
-#define ETAT_SAISIE 2
-#define ETAT_GAMEOVER 3
+#define ETAT_JEU       0
+#define ETAT_SCORES    1
+#define ETAT_SAISIE    2
+#define ETAT_GAMEOVER  3
+#define ETAT_SELECTION 4
+
+typedef struct {
+    const char *nom;
+    int vitesse, force, sante;
+    int unlocked;
+} CharInfo;
+
+static CharInfo PERSONNAGES[3] = {
+    {"Survivant", 6, 5, 7, 1},
+    {"A venir",   0, 0, 0, 0},
+    {"A venir",   0, 0, 0, 0},
+};
 
 static int keysHeld[323] = {0};
 /* one-shot flags set on keydown, consumed each frame */
@@ -40,6 +53,19 @@ static void afficherTexteCentre(SDL_Renderer *r, TTF_Font *p, const char *txt,
     if (!s) return;
     SDL_Texture *t = SDL_CreateTextureFromSurface(r, s);
     SDL_Rect d = {W_ECRAN/2 - s->w/2, y, s->w, s->h};
+    SDL_RenderCopy(r, t, NULL, &d);
+    SDL_DestroyTexture(t);
+    SDL_FreeSurface(s);
+}
+
+static void afficherTexteColonne(SDL_Renderer *r, TTF_Font *p, const char *txt,
+                                  SDL_Color c, int col_x, int col_w, int y)
+{
+    if (!p) return;
+    SDL_Surface *s = TTF_RenderUTF8_Blended(p, txt, c);
+    if (!s) return;
+    SDL_Texture *t = SDL_CreateTextureFromSurface(r, s);
+    SDL_Rect d = {col_x + col_w/2 - s->w/2, y, s->w, s->h};
     SDL_RenderCopy(r, t, NULL, &d);
     SDL_DestroyTexture(t);
     SDL_FreeSurface(s);
@@ -114,10 +140,15 @@ int main(int argc, char *argv[])
     int   scoreJoueur = 0;
     char  nomJoueur[64] = "";
 
-    int etat      = ETAT_JEU;
+    int etat      = ETAT_SELECTION;
     int continuer = 1;
     Uint32 lastTick = SDL_GetTicks();
     int finalScore = 0, finalTimeSec = 0, finalWagon = 1;
+
+    static int p1SelectedChar = 0;
+    static int p2SelectedChar = 0;
+    static int p1Confirmed    = 0;
+    static int p2Confirmed    = 0;
 
     while (continuer) {
 
@@ -175,6 +206,44 @@ int main(int argc, char *argv[])
                 if (etat == ETAT_GAMEOVER) {
                     if (ev.key.keysym.sym == SDLK_RETURN) etat = ETAT_SAISIE;
                     if (ev.key.keysym.sym == SDLK_ESCAPE) etat = ETAT_SCORES;
+                }
+                else if (etat == ETAT_SELECTION) {
+                    /* P1 navigation */
+                    if (ev.key.keysym.sym == SDLK_a) {
+                        do { p1SelectedChar = (p1SelectedChar + 2) % 3; }
+                        while (!PERSONNAGES[p1SelectedChar].unlocked);
+                    }
+                    if (ev.key.keysym.sym == SDLK_d) {
+                        do { p1SelectedChar = (p1SelectedChar + 1) % 3; }
+                        while (!PERSONNAGES[p1SelectedChar].unlocked);
+                    }
+                    if (ev.key.keysym.sym == SDLK_f) p1Confirmed = 1;
+
+                    /* P2 navigation */
+                    if (ev.key.keysym.sym == SDLK_LEFT) {
+                        do { p2SelectedChar = (p2SelectedChar + 2) % 3; }
+                        while (!PERSONNAGES[p2SelectedChar].unlocked);
+                    }
+                    if (ev.key.keysym.sym == SDLK_RIGHT) {
+                        do { p2SelectedChar = (p2SelectedChar + 1) % 3; }
+                        while (!PERSONNAGES[p2SelectedChar].unlocked);
+                    }
+                    if (ev.key.keysym.sym == SDLK_k) p2Confirmed = 1;
+
+                    /* Start game */
+                    if (ev.key.keysym.sym == SDLK_RETURN &&
+                        p1Confirmed && p2Confirmed) {
+                        bg.joueurs[0].hp = JOUEUR_MAX_HP;
+                        bg.joueurs[1].hp = JOUEUR_MAX_HP;
+                        joueur_init_interieur(&bg);
+                        scoreJoueur    = 0;
+                        bg.tempsDepart = SDL_GetTicks();
+                        bg.wagonActif  = 0;
+                        etat = ETAT_JEU;
+                    }
+
+                    /* Escape from selection = quit */
+                    if (ev.key.keysym.sym == SDLK_ESCAPE) continuer = 0;
                 }
             }
             else if (ev.type == SDL_KEYUP) {
@@ -299,9 +368,137 @@ int main(int argc, char *argv[])
             afficherTexteCentre(renderer, police,
                 "[ENTREE] Enregistrer votre score   [ECHAP] Menu des scores",
                 grisC, H_ECRAN - 60);
+
         } else if (etat == ETAT_SCORES) {
             background_afficher(&bg, renderer, MODE_MONO, 0, 0);
             scores_afficherMenu(scores, nbScores, renderer, police, blanc);
+
+        } else if (etat == ETAT_SELECTION) {
+            SDL_SetRenderDrawColor(renderer, 10, 15, 25, 255);
+            SDL_RenderClear(renderer);
+
+            TTF_Font *titleFont = policeGrande ? policeGrande : police;
+            SDL_Color titreCol = {255, 255, 255, 255};
+            afficherTexteCentre(renderer, titleFont,
+                                "CHOISISSEZ VOTRE PERSONNAGE", titreCol, 25);
+
+            const int COL_W = 400;
+
+            for (int pl = 0; pl < 2; pl++) {
+                int cx        = pl * 400;
+                int selChar   = (pl == 0) ? p1SelectedChar : p2SelectedChar;
+                int confirmed = (pl == 0) ? p1Confirmed    : p2Confirmed;
+
+                /* Player label */
+                SDL_Color labelCol = (pl == 0)
+                    ? (SDL_Color){255, 255, 255, 255}
+                    : (SDL_Color){ 60, 180, 220, 255};
+                afficherTexteColonne(renderer, police,
+                    (pl == 0) ? "JOUEUR 1" : "JOUEUR 2",
+                    labelCol, cx, COL_W, 80);
+
+                /* Character cards */
+                for (int i = 0; i < 3; i++) {
+                    int card_x = cx + 30;
+                    int card_y = 120 + i * 100;
+                    SDL_Rect card = {card_x, card_y, 340, 90};
+
+                    /* Card background */
+                    SDL_SetRenderDrawColor(renderer, 25, 30, 50, 255);
+                    SDL_RenderFillRect(renderer, &card);
+
+                    /* Selection border */
+                    if (i == selChar) {
+                        SDL_SetRenderDrawColor(renderer, 230, 140, 50, 255);
+                        SDL_RenderDrawRect(renderer, &card);
+                        SDL_Rect inner = {card_x+1, card_y+1, 338, 88};
+                        SDL_RenderDrawRect(renderer, &inner);
+                    } else {
+                        SDL_SetRenderDrawColor(renderer, 60, 60, 60, 255);
+                        SDL_RenderDrawRect(renderer, &card);
+                    }
+
+                    if (!PERSONNAGES[i].unlocked) {
+                        /* Dark overlay + "A VENIR" label */
+                        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 120);
+                        SDL_RenderFillRect(renderer, &card);
+                        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+                        SDL_Color gris = {120, 120, 120, 255};
+                        afficherTexteColonne(renderer, police, "A VENIR", gris,
+                                             card_x, 340, card_y + 36);
+                    } else {
+                        /* Name */
+                        SDL_Color w = {255, 255, 255, 255};
+                        afficherTexte(renderer, police, PERSONNAGES[i].nom, w,
+                                      card_x + 10, card_y + 6);
+
+                        /* Stat bars */
+                        SDL_Color lbl = {180, 180, 180, 255};
+
+                        afficherTexte(renderer, police, "VITESSE", lbl,
+                                      card_x+8, card_y+28);
+                        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+                        SDL_Rect vbg = {card_x+80, card_y+30, 100, 6};
+                        SDL_RenderFillRect(renderer, &vbg);
+                        SDL_SetRenderDrawColor(renderer, 230, 180, 40, 255);
+                        SDL_Rect vfg = {card_x+80, card_y+30,
+                                        PERSONNAGES[i].vitesse * 10, 6};
+                        SDL_RenderFillRect(renderer, &vfg);
+
+                        afficherTexte(renderer, police, "FORCE", lbl,
+                                      card_x+8, card_y+43);
+                        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+                        SDL_Rect fbg = {card_x+80, card_y+45, 100, 6};
+                        SDL_RenderFillRect(renderer, &fbg);
+                        SDL_SetRenderDrawColor(renderer, 230, 180, 40, 255);
+                        SDL_Rect ffg = {card_x+80, card_y+45,
+                                        PERSONNAGES[i].force * 10, 6};
+                        SDL_RenderFillRect(renderer, &ffg);
+
+                        afficherTexte(renderer, police, "SANTE", lbl,
+                                      card_x+8, card_y+58);
+                        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+                        SDL_Rect sbg = {card_x+80, card_y+60, 100, 6};
+                        SDL_RenderFillRect(renderer, &sbg);
+                        SDL_SetRenderDrawColor(renderer, 230, 180, 40, 255);
+                        SDL_Rect sfg = {card_x+80, card_y+60,
+                                        PERSONNAGES[i].sante * 10, 6};
+                        SDL_RenderFillRect(renderer, &sfg);
+                    }
+                }
+
+                /* Controls reminder */
+                SDL_Color ctrlCol = {160, 160, 160, 255};
+                afficherTexteColonne(renderer, police,
+                    (pl == 0) ? "A/D=bouger  SPACE=sauter  F=tirer  E=melee"
+                              : "LEFT/RIGHT=bouger  UP=sauter  K=tirer  L=melee",
+                    ctrlCol, cx, COL_W, H_ECRAN - 90);
+
+                /* Confirmation state */
+                if (!confirmed) {
+                    SDL_Color confCol = (pl == 0)
+                        ? (SDL_Color){255, 255, 255, 255}
+                        : (SDL_Color){ 60, 180, 220, 255};
+                    afficherTexteColonne(renderer, police,
+                        (pl == 0) ? "J1 : [F] pour confirmer"
+                                  : "J2 : [K] pour confirmer",
+                        confCol, cx, COL_W, H_ECRAN - 55);
+                } else {
+                    SDL_Color grn = {60, 220, 80, 255};
+                    afficherTexteColonne(renderer, police,
+                        (pl == 0) ? "J1 : CONFIRME" : "J2 : CONFIRME",
+                        grn, cx, COL_W, H_ECRAN - 55);
+                }
+            }
+
+            /* Bottom instruction */
+            SDL_Color instrCol = {200, 200, 200, 255};
+            afficherTexteCentre(renderer, police,
+                (p1Confirmed && p2Confirmed)
+                    ? "[ENTREE] Commencer la partie"
+                    : "Les deux joueurs doivent confirmer",
+                instrCol, H_ECRAN - 25);
         }
 
         SDL_RenderPresent(renderer);
