@@ -172,15 +172,15 @@ void balles_update(Balle *balles, int *nb,
                    Ennemi *ennemis, int *nbEnnemis,
                    int *joueurHp, EtatJoueur *joueurEtat, AnimationSystem *joueurAnim,
                    float joueurX, float joueurY, int joueurW, int joueurH);
-void balles_afficher(Balle *balles, int nb, SDL_Renderer *r, SDL_Texture *bulletTex);
+void balles_afficher(Balle *balles, int nb, SDL_Renderer *r, SDL_Texture *bulletTex, int ox);
 
 void hitfx_spawn(HitEffect *fx, int *nbFx, float x, float y, SDL_Texture *sheet);
 void hitfx_update(HitEffect *fx, int *nb, float dt);
-void hitfx_afficher(HitEffect *fx, int nb, SDL_Renderer *r);
+void hitfx_afficher(HitEffect *fx, int nb, SDL_Renderer *r, int ox);
 
 void ennemis_spawn(Ennemi *ennemis, int *nb, TypeEnnemi type,
                    float x, float y, int wagon, SDL_Texture *sheet);
 /* ennemis_update declared in background.h (needs Joueur type) */
-void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r);
+void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r, int ox);
 
 #endif

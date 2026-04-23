@@ -244,6 +244,10 @@ typedef struct {
     HitEffect  hitFx[MAX_HIT_FX];
     int        nbHitFx;
 
+    /* ══ Split-screen state ══ */
+    int   splitMode;       /* 0 = MONO, 1 = SPLIT */
+    float splitCooldown;   /* seconds, prevents thrashing */
+
 } Background;
 
 /* ─────────────────────────────────────
@@ -292,6 +296,7 @@ void background_liberer(Background *bg);
 
 void wagonsInterieurs_init(Background *bg, SDL_Renderer *renderer);
 void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer);
+void wagonsInterieurs_afficher_camera(Background *bg, SDL_Renderer *renderer, int ox);
 void minimap_afficher(Background *bg, SDL_Renderer *renderer);
 void transitionSlide_declencher(Background *bg, int direction);
 void transitionSlide_update(Background *bg);

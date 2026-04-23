@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "background.h"
 
 #define ETAT_JEU       0
@@ -302,6 +303,21 @@ int main(int argc, char *argv[])
                 finalTimeSec = (int)((SDL_GetTicks() - bg.tempsDepart) / 1000);
                 finalWagon   = bg.wagonActif + 1;
             }
+
+            /* Split-mode hysteresis (2-player only) */
+            if (bg.nbJoueursActifs >= 2) {
+                float splitDx = fabsf(bg.joueurs[0].x - bg.joueurs[1].x);
+                bg.splitCooldown -= dt;
+                if (bg.splitCooldown <= 0.0f) {
+                    if (bg.splitMode == 0 && splitDx > 400.0f) {
+                        bg.splitMode = 1;
+                        bg.splitCooldown = 0.3f;
+                    } else if (bg.splitMode == 1 && splitDx < 300.0f) {
+                        bg.splitMode = 0;
+                        bg.splitCooldown = 0.3f;
+                    }
+                }
+            }
         }
 
         if (etat == ETAT_SAISIE) {
@@ -316,7 +332,34 @@ int main(int argc, char *argv[])
         SDL_RenderClear(renderer);
 
         if (etat == ETAT_JEU) {
-            wagonsInterieurs_afficher(&bg, renderer);
+            if (bg.splitMode == 0) {
+                wagonsInterieurs_afficher(&bg, renderer);
+            } else {
+                /* LEFT half — P1 camera */
+                SDL_Rect vpL = {0, 0, 399, H_ECRAN};
+                SDL_RenderSetViewport(renderer, &vpL);
+                int ox_left = 399/2 - (int)(bg.joueurs[0].x + JOUEUR_W/2);
+                if (ox_left > -WAGON_MUR_G_X)      ox_left = -WAGON_MUR_G_X;
+                if (ox_left < 399 - WAGON_MUR_D_X) ox_left = 399 - WAGON_MUR_D_X;
+                wagonsInterieurs_afficher_camera(&bg, renderer, ox_left);
+
+                /* Orange separator */
+                SDL_RenderSetViewport(renderer, NULL);
+                SDL_SetRenderDrawColor(renderer, 230, 140, 50, 255);
+                SDL_Rect sep = {399, 0, 2, H_ECRAN};
+                SDL_RenderFillRect(renderer, &sep);
+
+                /* RIGHT half — P2 camera */
+                SDL_Rect vpR = {401, 0, 399, H_ECRAN};
+                SDL_RenderSetViewport(renderer, &vpR);
+                int ox_right = 399/2 - (int)(bg.joueurs[1].x + JOUEUR_W/2);
+                if (ox_right > -WAGON_MUR_G_X)      ox_right = -WAGON_MUR_G_X;
+                if (ox_right < 399 - WAGON_MUR_D_X) ox_right = 399 - WAGON_MUR_D_X;
+                wagonsInterieurs_afficher_camera(&bg, renderer, ox_right);
+
+                /* Reset viewport — HUD, minimap, guide, timer render full-width */
+                SDL_RenderSetViewport(renderer, NULL);
+            }
             flash_afficher(&bg, renderer);
             background_afficherTemps(&bg, renderer, W_ECRAN-155, 8);
             minimap_afficher(&bg, renderer);

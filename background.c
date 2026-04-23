@@ -94,6 +94,8 @@ int background_init(Background *bg, SDL_Renderer *renderer, int niveau)
     memset(bg->balles,  0, sizeof(bg->balles));
     memset(bg->ennemis, 0, sizeof(bg->ennemis));
     memset(bg->hitFx,   0, sizeof(bg->hitFx));
+    bg->splitMode     = 0;
+    bg->splitCooldown = 0.0f;
     return 0;
 }
 
@@ -986,7 +988,7 @@ void transitionSlide_update(Background *bg)
    RENDU PRINCIPAL INTÉRIEUR
    ═══════════════════════════════════════════════════ */
 
-void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
+void wagonsInterieurs_afficher_camera(Background *bg, SDL_Renderer *renderer, int ox)
 {
     int idx = bg->wagonActif;
     int dir = bg->transitionSlide.direction;
@@ -994,18 +996,18 @@ void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
     int nxt = bg->transitionSlide.wagonCible;
 
     if (!bg->transitionSlide.actif) {
-        wagon_dessiner(bg, renderer, idx, 0);
-        ennemis_afficher(bg->ennemis, bg->nbEnnemis, idx, renderer);
+        wagon_dessiner(bg, renderer, idx, ox);
+        ennemis_afficher(bg->ennemis, bg->nbEnnemis, idx, renderer, ox);
         for (int p = 0; p < bg->nbJoueursActifs; p++)
-            balles_afficher(bg->balles[p], bg->nbBalles[p], renderer, bg->bulletTex);
-        hitfx_afficher(bg->hitFx, bg->nbHitFx, renderer);
-        joueur_afficher_interieur(bg, renderer, 0);
+            balles_afficher(bg->balles[p], bg->nbBalles[p], renderer, bg->bulletTex, ox);
+        hitfx_afficher(bg->hitFx, bg->nbHitFx, renderer, ox);
+        joueur_afficher_interieur(bg, renderer, ox);
     } else {
         int ox_cur = (dir == 1) ? -off :  off;
         int ox_nxt = (dir == 1) ?  W_ECRAN - off : -W_ECRAN + off;
-        wagon_dessiner(bg, renderer, nxt, ox_nxt);
-        wagon_dessiner(bg, renderer, idx, ox_cur);
-        joueur_afficher_interieur(bg, renderer, ox_cur);
+        wagon_dessiner(bg, renderer, nxt, ox + ox_nxt);
+        wagon_dessiner(bg, renderer, idx, ox + ox_cur);
+        joueur_afficher_interieur(bg, renderer, ox + ox_cur);
     }
 
     /* ── Neige ── */
@@ -1017,7 +1019,11 @@ void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
         SDL_RenderFillRect(renderer, &r);
     }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
 
+void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
+{
+    wagonsInterieurs_afficher_camera(bg, renderer, 0);
 }
 
 /* ═══════════════════════════════════════════════════

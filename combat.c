@@ -131,12 +131,12 @@ void balles_update(Balle *balles, int *nb,
     }
 }
 
-void balles_afficher(Balle *balles, int nb, SDL_Renderer *r, SDL_Texture *bulletTex)
+void balles_afficher(Balle *balles, int nb, SDL_Renderer *r, SDL_Texture *bulletTex, int ox)
 {
     for (int i = 0; i < nb; i++) {
         Balle *b = &balles[i];
         if (!b->actif) continue;
-        SDL_Rect dst = {(int)b->x, (int)b->y, BULLET_DRAW_W, BULLET_DRAW_H};
+        SDL_Rect dst = {(int)b->x + ox, (int)b->y, BULLET_DRAW_W, BULLET_DRAW_H};
         if (bulletTex) {
             SDL_RendererFlip flip = (b->velX < 0) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             SDL_RenderCopyEx(r, bulletTex, NULL, &dst, 0, NULL, flip);
@@ -175,12 +175,12 @@ void hitfx_update(HitEffect *fx, int *nb, float dt)
     }
 }
 
-void hitfx_afficher(HitEffect *fx, int nb, SDL_Renderer *r)
+void hitfx_afficher(HitEffect *fx, int nb, SDL_Renderer *r, int ox)
 {
     for (int i = 0; i < nb; i++) {
         if (!fx[i].actif) continue;
         SDL_Rect src = animation_get_src_rect(&fx[i].anim);
-        SDL_Rect dst = {(int)fx[i].x - HITFX_DRAW_W/2,
+        SDL_Rect dst = {(int)fx[i].x + ox - HITFX_DRAW_W/2,
                         (int)fx[i].y - HITFX_DRAW_H/2,
                         HITFX_DRAW_W, HITFX_DRAW_H};
         if (fx[i].anim.texture) {
@@ -340,7 +340,7 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
     }
 }
 
-void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r)
+void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r, int ox)
 {
     for (int i = 0; i < nb; i++) {
         Ennemi *e = &ennemis[i];
@@ -353,7 +353,7 @@ void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r)
         int hh = enemy_hbh(e->type);
 
         /* Center sprite over hitbox, align bottom */
-        SDL_Rect dst = {(int)e->x + hw/2 - dw/2,
+        SDL_Rect dst = {(int)e->x + ox + hw/2 - dw/2,
                         (int)e->y + hh - dh,
                         dw, dh};
 
