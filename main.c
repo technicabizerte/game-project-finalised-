@@ -221,6 +221,7 @@ int main(int argc, char *argv[])
     static int sauvegardeSelected = 0;   /* 0 = left btn, 1 = right btn */
     static int menuSelected       = 0;   /* 0..4 highlighted main-menu button */
     static int optionsSelected    = 0;   /* 0..4: 0=Vol-, 1=Vol+, 2=Normal, 3=Fullscreen, 4=Retour */
+    static int scoresSelected     = 0;   /* 0 = Retour, 1 = Quitter */
     static int volumeLevel        = MIX_MAX_VOLUME / 2;   /* 0..128 */
     static int fullscreenMode     = 0;   /* 0 = windowed, 1 = fullscreen */
 
@@ -255,11 +256,8 @@ int main(int argc, char *argv[])
                             fprintf(stderr, "[SAVE] Partie sauvegardee\n");
                     }
                 }
-                if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE) {
-                    etat = ETAT_MENU;
-                }
                 if (etat == ETAT_GAMEOVER) {
-                    if (ev.key.keysym.sym == SDLK_RETURN) etat = ETAT_SAISIE;
+                    if (ev.key.keysym.sym == SDLK_RETURN) { Mix_PauseMusic(); etat = ETAT_SAISIE; }
                     if (ev.key.keysym.sym == SDLK_ESCAPE) etat = ETAT_SCORES;
                 }
                 else if (etat == ETAT_SELECTION) {
@@ -511,6 +509,26 @@ int main(int argc, char *argv[])
                     }
                     if (k == SDLK_ESCAPE) etat = ETAT_MENU;
                 }
+                else if (etat == ETAT_SCORES) {
+                    SDL_Keycode k = ev.key.keysym.sym;
+                    if (k == SDLK_LEFT  || k == SDLK_a) scoresSelected = 0;
+                    if (k == SDLK_RIGHT || k == SDLK_d) scoresSelected = 1;
+                    if (k == SDLK_RETURN) {
+                        if (scoresSelected == 0) {
+                            etat = ETAT_MENU;
+                        } else {
+                            continuer = 0;
+                        }
+                    }
+                    if (k == SDLK_ESCAPE) {
+                        /* Per cahier des charges: ECHAP on leaderboard quits */
+                        continuer = 0;
+                    }
+                    if (k == SDLK_e) {
+                        fprintf(stderr, "[SCORES] Enigme submenu a venir "
+                                        "(integration avec equipe enigme)\n");
+                    }
+                }
             }
             else if (ev.type == SDL_KEYUP) {
                 keysHeld[ev.key.keysym.sym & 0x1FF] = 0;
@@ -591,6 +609,8 @@ int main(int argc, char *argv[])
                                   finalTimeSec, finalWagon);
             scores_sauvegarder(FICHIER_SCORES, scores, nbScores);
             etat = ETAT_SCORES;
+            /* TODO: load victory.mp3 and Mix_PlayMusic for celebratory tone per spec */
+            Mix_ResumeMusic();
         }
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -678,8 +698,14 @@ int main(int argc, char *argv[])
                 grisC, H_ECRAN - 60);
 
         } else if (etat == ETAT_SCORES) {
-            background_afficher(&bg, renderer, MODE_MONO, 0, 0);
-            scores_afficherMenu(scores, nbScores, renderer, police, blanc);
+            scores_afficherMenu(scores, nbScores, renderer, police, policeGrande, blanc);
+            SDL_Rect btnRetour  = {150, H_ECRAN - 90, 200, 45};
+            SDL_Rect btnQuitter = {450, H_ECRAN - 90, 200, 45};
+            drawMenuBtn(renderer, police, "RETOUR",  btnRetour,  scoresSelected == 0, 0);
+            drawMenuBtn(renderer, police, "QUITTER", btnQuitter, scoresSelected == 1, 0);
+            afficherTexteCentre(renderer, police,
+                "[</>] Naviguer  [ENTREE] Valider  [E] Enigme  [ECHAP] Quitter",
+                (SDL_Color){180, 190, 210, 255}, H_ECRAN - 30);
 
         } else if (etat == ETAT_SELECTION) {
             /* Warm gradient: dark red top → deep blue bottom */

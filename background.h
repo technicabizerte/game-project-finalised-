@@ -278,7 +278,7 @@ int  scores_charger(const char *fichier, Score *scores, int maxScores);
 void scores_ajouterEtTrier(Score *scores, int *nbScores, const char *nom, int score,
                             int tempsSec, int wagonAtteint);
 void scores_afficherMenu(Score *scores, int nbScores, SDL_Renderer *renderer,
-                          TTF_Font *police, SDL_Color couleur);
+                          TTF_Font *police, TTF_Font *policeGrande, SDL_Color couleur);
 
 void vues_init(Background *bg, SDL_Renderer *renderer);
 

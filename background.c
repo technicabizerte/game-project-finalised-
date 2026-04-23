@@ -243,18 +243,36 @@ void scores_ajouterEtTrier(Score *scores, int *nb, const char *nom, int score,
             }
 }
 
-void scores_afficherMenu(Score *scores, int nb, SDL_Renderer *renderer, TTF_Font *police, SDL_Color couleur)
+void scores_afficherMenu(Score *scores, int nb, SDL_Renderer *renderer,
+                          TTF_Font *police, TTF_Font *policeGrande, SDL_Color couleur)
 {
     if (!police) return;
 
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 20, 210);
-    SDL_Rect fond = {0, 0, W_ECRAN, H_ECRAN};
-    SDL_RenderFillRect(renderer, &fond);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    /* Third background: purple-to-dark gradient per spec */
+    for (int i = 0; i < H_ECRAN; i++) {
+        float t = (float)i / (float)H_ECRAN;
+        Uint8 r = (Uint8)(40 * (1.0f - t) + 10 * t);
+        Uint8 g = (Uint8)(10 * (1.0f - t) +  5 * t);
+        Uint8 b = (Uint8)(60 * (1.0f - t) + 20 * t);
+        SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+        SDL_RenderDrawLine(renderer, 0, i, W_ECRAN - 1, i);
+    }
 
+    /* Deterministic star field for victory/celebration feel */
+    for (int i = 0; i < 60; i++) {
+        int sx = (i * 97 + 13) % W_ECRAN;
+        int sy = ((i * 211 + 41) % (H_ECRAN - 80)) + 30;
+        Uint8 brightness = 100 + (i * 7) % 155;
+        SDL_SetRenderDrawColor(renderer, brightness, brightness,
+                                brightness * 7 / 10, 255);
+        SDL_Rect dot = {sx, sy, 2, 2};
+        SDL_RenderFillRect(renderer, &dot);
+    }
+
+    /* Title in yellow using policeGrande (fallback to police) */
+    TTF_Font *titleFont = policeGrande ? policeGrande : police;
     SDL_Color jaune = {255, 215, 0, 255};
-    SDL_Surface *s = TTF_RenderUTF8_Blended(police, "MEILLEURS SCORES", jaune);
+    SDL_Surface *s = TTF_RenderUTF8_Blended(titleFont, "MEILLEURS SCORES", jaune);
     if (s) {
         SDL_Texture *t = SDL_CreateTextureFromSurface(renderer, s);
         SDL_Rect d = {W_ECRAN/2 - s->w/2, 40, s->w, s->h};
@@ -262,38 +280,41 @@ void scores_afficherMenu(Score *scores, int nb, SDL_Renderer *renderer, TTF_Font
         SDL_DestroyTexture(t); SDL_FreeSurface(s);
     }
 
-    SDL_Color grisH = {160, 160, 160, 255};
+    /* Column headers */
+    SDL_Color blanc = {255, 255, 255, 255};
     s = TTF_RenderUTF8_Blended(police,
-        "RANG   NOM              SCORE    TEMPS    WAGON", grisH);
+        "RANG   NOM              SCORE   TEMPS    WAGON", blanc);
     if (s) {
         SDL_Texture *t = SDL_CreateTextureFromSurface(renderer, s);
-        SDL_Rect d = {W_ECRAN/2 - s->w/2, 90, s->w, s->h};
+        SDL_Rect d = {W_ECRAN/2 - s->w/2, 110, s->w, s->h};
         SDL_RenderCopy(renderer, t, NULL, &d);
         SDL_DestroyTexture(t); SDL_FreeSurface(s);
     }
 
-    int maxRows = nb < 10 ? nb : 10;
-    for (int i = 0; i < maxRows; i++) {
-        char row[128];
-        snprintf(row, sizeof(row), "%2d.   %-16s %5d    %02d:%02d     %d/5",
-                 i+1, scores[i].nom, scores[i].score,
-                 scores[i].tempsSec/60, scores[i].tempsSec%60,
-                 scores[i].wagonAtteint);
-        s = TTF_RenderUTF8_Blended(police, row, couleur);
-        if (!s) continue;
-        SDL_Texture *t = SDL_CreateTextureFromSurface(renderer, s);
-        SDL_Rect d = {W_ECRAN/2 - s->w/2, 120 + i*26, s->w, s->h};
-        SDL_RenderCopy(renderer, t, NULL, &d);
-        SDL_DestroyTexture(t); SDL_FreeSurface(s);
-    }
-
-    SDL_Color gris = {200, 200, 200, 255};
-    s = TTF_RenderUTF8_Blended(police, "[ECHAP] Retour", gris);
-    if (s) {
-        SDL_Texture *t = SDL_CreateTextureFromSurface(renderer, s);
-        SDL_Rect d = {W_ECRAN/2 - s->w/2, H_ECRAN-40, s->w, s->h};
-        SDL_RenderCopy(renderer, t, NULL, &d);
-        SDL_DestroyTexture(t); SDL_FreeSurface(s);
+    if (nb == 0) {
+        SDL_Color grisC = {180, 180, 180, 255};
+        s = TTF_RenderUTF8_Blended(police, "Aucun score enregistre", grisC);
+        if (s) {
+            SDL_Texture *t = SDL_CreateTextureFromSurface(renderer, s);
+            SDL_Rect d = {W_ECRAN/2 - s->w/2, 180, s->w, s->h};
+            SDL_RenderCopy(renderer, t, NULL, &d);
+            SDL_DestroyTexture(t); SDL_FreeSurface(s);
+        }
+    } else {
+        int maxRows = nb < 10 ? nb : 10;
+        for (int i = 0; i < maxRows; i++) {
+            char row[128];
+            snprintf(row, sizeof(row), "%2d.  %-16s  %5d   %02d:%02d     %d/5",
+                     i+1, scores[i].nom, scores[i].score,
+                     scores[i].tempsSec/60, scores[i].tempsSec%60,
+                     scores[i].wagonAtteint);
+            s = TTF_RenderUTF8_Blended(police, row, couleur);
+            if (!s) continue;
+            SDL_Texture *t = SDL_CreateTextureFromSurface(renderer, s);
+            SDL_Rect d = {W_ECRAN/2 - s->w/2, 140 + i*28, s->w, s->h};
+            SDL_RenderCopy(renderer, t, NULL, &d);
+            SDL_DestroyTexture(t); SDL_FreeSurface(s);
+        }
     }
 }
 
