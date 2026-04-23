@@ -8,11 +8,12 @@
 #include <math.h>
 #include "background.h"
 
-#define ETAT_JEU       0
-#define ETAT_SCORES    1
-#define ETAT_SAISIE    2
-#define ETAT_GAMEOVER  3
-#define ETAT_SELECTION 4
+#define ETAT_JEU        0
+#define ETAT_SCORES     1
+#define ETAT_SAISIE     2
+#define ETAT_GAMEOVER   3
+#define ETAT_SELECTION  4
+#define ETAT_SAUVEGARDE 5
 
 typedef struct {
     const char *nom;
@@ -150,6 +151,8 @@ int main(int argc, char *argv[])
     static int p2SelectedChar = 0;
     static int p1Confirmed    = 0;
     static int p2Confirmed    = 0;
+    static int sauvegardeScreen   = 0;   /* 0 = screen A, 1 = screen B */
+    static int sauvegardeSelected = 0;   /* 0 = left btn, 1 = right btn */
 
     while (continuer) {
 
@@ -177,6 +180,10 @@ int main(int argc, char *argv[])
                     if (ev.key.keysym.sym == SDLK_e)  keyMelee  = 1;
                     if (ev.key.keysym.sym == SDLK_k)  keyShoot2 = 1;
                     if (ev.key.keysym.sym == SDLK_l)  keyMelee2 = 1;
+                    if (ev.key.keysym.sym == SDLK_s) {
+                        if (sauvegarder_partie(&bg, scoreJoueur, bg.tempsDepart))
+                            fprintf(stderr, "[SAVE] Partie sauvegardee\n");
+                    }
                 }
                 if (etat == ETAT_SCORES && ev.key.keysym.sym == SDLK_ESCAPE) {
                     bg.wagonActif = 0;
@@ -245,6 +252,52 @@ int main(int argc, char *argv[])
 
                     /* Escape from selection = quit */
                     if (ev.key.keysym.sym == SDLK_ESCAPE) continuer = 0;
+
+                    /* Temp test hotkey: L opens save/load menu */
+                    if (ev.key.keysym.sym == SDLK_l) {
+                        sauvegardeScreen   = 0;
+                        sauvegardeSelected = 0;
+                        etat = ETAT_SAUVEGARDE;
+                    }
+                }
+                else if (etat == ETAT_SAUVEGARDE) {
+                    if (ev.key.keysym.sym == SDLK_LEFT ||
+                        ev.key.keysym.sym == SDLK_a)
+                        sauvegardeSelected = 0;
+                    if (ev.key.keysym.sym == SDLK_RIGHT ||
+                        ev.key.keysym.sym == SDLK_d)
+                        sauvegardeSelected = 1;
+                    if (ev.key.keysym.sym == SDLK_RETURN) {
+                        if (sauvegardeScreen == 0) {
+                            if (sauvegardeSelected == 0) {
+                                /* OUI: go to screen B */
+                                sauvegardeScreen   = 1;
+                                sauvegardeSelected = 0;
+                            } else {
+                                /* NON: new game */
+                                etat = ETAT_SELECTION;
+                            }
+                        } else {
+                            if (sauvegardeSelected == 0) {
+                                /* CHARGER */
+                                if (charger_partie(&bg, &scoreJoueur, &bg.tempsDepart)) {
+                                    etat = ETAT_JEU;
+                                } else {
+                                    etat = ETAT_SELECTION;
+                                }
+                            } else {
+                                /* NOUVELLE PARTIE */
+                                etat = ETAT_SELECTION;
+                            }
+                            sauvegardeScreen = 0;
+                        }
+                    }
+                    if (ev.key.keysym.sym == SDLK_ESCAPE) {
+                        if (sauvegardeScreen == 1)
+                            sauvegardeScreen = 0;
+                        else
+                            etat = ETAT_SELECTION;
+                    }
                 }
             }
             else if (ev.type == SDL_KEYUP) {
@@ -388,7 +441,7 @@ int main(int argc, char *argv[])
             afficherTexte(renderer, police, wbuf, glacial, W_ECRAN/2-80, H_ECRAN-42);
 
             afficherTexte(renderer, police,
-                "A/D:Marcher  ESPACE:Sauter  F:Tirer  E:Melee  G:Guide  F1:Scores",
+                "A/D:Marcher  ESPACE:Sauter  F:Tirer  E:Melee  G:Guide  F1:Scores  S:Sauver",
                 blanc, 15, H_ECRAN-22);
 
         } else if (etat == ETAT_GAMEOVER) {
@@ -542,6 +595,64 @@ int main(int argc, char *argv[])
                     ? "[ENTREE] Commencer la partie"
                     : "Les deux joueurs doivent confirmer",
                 instrCol, H_ECRAN - 25);
+
+        } else if (etat == ETAT_SAUVEGARDE) {
+            SDL_SetRenderDrawColor(renderer, 10, 15, 25, 255);
+            SDL_RenderClear(renderer);
+
+            /* Title */
+            SDL_Color blanc2   = {255, 255, 255, 255};
+            SDL_Color jaune2   = {255, 215,   0, 255};
+            SDL_Color gris2    = {180, 180, 180, 255};
+            afficherTexteCentre(renderer, policeGrande,
+                (sauvegardeScreen == 0) ? "SAUVEGARDE" : "CHARGER PARTIE",
+                blanc2, 60);
+
+            /* Message */
+            afficherTexteCentre(renderer, police,
+                (sauvegardeScreen == 0)
+                    ? "Voulez-vous sauvegarder votre jeu ?"
+                    : "Reprendre votre partie sauvegardee ?",
+                gris2, 180);
+
+            /* Buttons — two 200×60, 40px gap, centered */
+            const char *labels[2][2] = {
+                {"OUI",           "NON"},
+                {"CHARGER LE JEU","NOUVELLE PARTIE"}
+            };
+            int totalW  = 200 + 40 + 200;
+            int startX  = W_ECRAN / 2 - totalW / 2;
+            int btnY    = 280;
+
+            for (int b = 0; b < 2; b++) {
+                int bx = startX + b * (200 + 40);
+                SDL_Rect btn = {bx, btnY, 200, 60};
+
+                /* Fill */
+                SDL_SetRenderDrawColor(renderer, 40, 60, 100, 255);
+                SDL_RenderFillRect(renderer, &btn);
+
+                /* Border: yellow if selected, orange otherwise */
+                if (b == sauvegardeSelected) {
+                    SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
+                } else {
+                    SDL_SetRenderDrawColor(renderer, 230, 140, 50, 255);
+                }
+                SDL_RenderDrawRect(renderer, &btn);
+                SDL_Rect btnInner = {bx+1, btnY+1, 198, 58};
+                SDL_RenderDrawRect(renderer, &btnInner);
+
+                /* Label centered in button */
+                SDL_Color labelCol = (b == sauvegardeSelected) ? jaune2 : blanc2;
+                afficherTexteColonne(renderer, police,
+                    labels[sauvegardeScreen][b],
+                    labelCol, bx, 200, btnY + 20);
+            }
+
+            /* Bottom hint */
+            afficherTexteCentre(renderer, police,
+                "[<-/->] Naviguer  [ENTREE] Valider  [ECHAP] Retour",
+                gris2, H_ECRAN - 30);
         }
 
         SDL_RenderPresent(renderer);

@@ -323,4 +323,7 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
                     Joueur *joueurs, int nbJoueurs,
                     int wagonSolY, int wagonPlafY);
 
+int sauvegarder_partie(const Background *bg, int scoreJoueur, Uint32 tempsDepart);
+int charger_partie(Background *bg, int *scoreJoueur, Uint32 *tempsDepart);
+
 #endif

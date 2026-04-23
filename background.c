@@ -1118,6 +1118,154 @@ void minimap_afficher(Background *bg, SDL_Renderer *renderer)
     }
 }
 
+/* ═══════════════════════════════════════════════════
+   SAUVEGARDE / CHARGEMENT
+   ═══════════════════════════════════════════════════ */
+
+int sauvegarder_partie(const Background *bg, int scoreJoueur, Uint32 tempsDepart)
+{
+    FILE *fp = fopen("savegame.txt", "w");
+    if (!fp) return 0;
+
+    Uint32 elapsed = SDL_GetTicks() - tempsDepart;
+
+    fprintf(fp, "wagon:%d\n",           bg->wagonActif);
+    fprintf(fp, "nbJoueursActifs:%d\n", bg->nbJoueursActifs);
+    fprintf(fp, "score:%d\n",           scoreJoueur);
+    fprintf(fp, "tempsDepart:%u\n",     (unsigned)tempsDepart);
+    fprintf(fp, "tempsEcoule:%u\n",     (unsigned)elapsed);
+
+    for (int i = 0; i < NB_JOUEURS_MAX; i++) {
+        const Joueur *j = &bg->joueurs[i];
+        fprintf(fp, "joueur:%d:%f:%f:%d:%d:%d\n",
+                i, j->x, j->y, j->hp, j->direction, j->actif);
+    }
+
+    for (int i = 0; i < bg->nbEnnemis; i++) {
+        const Ennemi *e = &bg->ennemis[i];
+        fprintf(fp, "ennemi:%d:%f:%f:%d:%d:%d:%d\n",
+                (int)e->type, e->x, e->y, e->hp,
+                e->wagon, e->actif, (int)e->etat);
+    }
+
+    fclose(fp);
+    return 1;
+}
+
+int charger_partie(Background *bg, int *scoreJoueur, Uint32 *tempsDepart)
+{
+    FILE *fp = fopen("savegame.txt", "r");
+    if (!fp) return 0;
+
+    /* Reset combat state */
+    memset(bg->ennemis, 0, sizeof(bg->ennemis));
+    bg->nbEnnemis = 0;
+    for (int i = 0; i < NB_JOUEURS_MAX; i++) {
+        bg->nbBalles[i] = 0;
+        memset(bg->balles[i], 0, sizeof(bg->balles[i]));
+    }
+    bg->nbHitFx = 0;
+    memset(bg->hitFx, 0, sizeof(bg->hitFx));
+    bg->transitionSlide.actif  = 0;
+    bg->transitionSlide.offset = 0.0f;
+
+    char    line[256];
+    int     nbEnnemisLus = 0;
+    Uint32  elapsed_ms   = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        int ival;
+        unsigned uval;
+
+        if (sscanf(line, "wagon:%d", &ival) == 1) {
+            bg->wagonActif = ival;
+        } else if (sscanf(line, "nbJoueursActifs:%d", &ival) == 1) {
+            bg->nbJoueursActifs = ival;
+        } else if (sscanf(line, "score:%d", &ival) == 1) {
+            *scoreJoueur = ival;
+        } else if (sscanf(line, "tempsEcoule:%u", &uval) == 1) {
+            elapsed_ms = uval;
+        } else {
+            /* joueur line */
+            int   idx, jhp, jdir, jact;
+            float jx, jy;
+            if (sscanf(line, "joueur:%d:%f:%f:%d:%d:%d",
+                       &idx, &jx, &jy, &jhp, &jdir, &jact) == 6) {
+                if (idx >= 0 && idx < NB_JOUEURS_MAX) {
+                    Joueur *j       = &bg->joueurs[idx];
+                    j->x            = jx;
+                    j->y            = jy;
+                    j->hp           = jhp;
+                    j->direction    = jdir;
+                    j->actif        = jact;
+                    j->velX         = 0.0f;
+                    j->velY         = 0.0f;
+                    j->auSol        = 1;
+                    j->w            = JOUEUR_W;
+                    j->h            = JOUEUR_H;
+                    j->etat         = PS_IDLE;
+                    j->lastShootTick = 0;
+                    j->lastMeleeTick = 0;
+                    j->muzzleFrames  = 0;
+                    animation_init(&j->anim, bg->playerSheet,
+                                   PLAYER_COLS, PLAYER_ROWS,
+                                   ANIM_P_IDLE, PLAYER_NFRAMES[ANIM_P_IDLE],
+                                   PLAYER_ANIM_FPS[ANIM_P_IDLE], 1);
+                }
+                continue;
+            }
+
+            /* ennemi line */
+            int   etype, ehp, ewagon, eact, eetat;
+            float ex, ey;
+            if (sscanf(line, "ennemi:%d:%f:%f:%d:%d:%d:%d",
+                       &etype, &ex, &ey, &ehp, &ewagon, &eact, &eetat) == 7) {
+                if (nbEnnemisLus < MAX_ENNEMIS) {
+                    Ennemi *e           = &bg->ennemis[nbEnnemisLus];
+                    e->type             = (TypeEnnemi)etype;
+                    e->x                = ex;
+                    e->y                = ey;
+                    e->hp               = ehp;
+                    e->wagon            = ewagon;
+                    e->actif            = eact;
+                    e->etat             = (EtatEnnemi)eetat;
+                    e->velY             = 0.0f;
+                    e->auSol            = 1;
+                    e->direction        = -1;
+                    e->hitFlashMs       = 0;
+                    e->lastAttackTick   = 0;
+                    e->attackCooldownMs = (e->type == ET_ENFORCER) ? 2000u :
+                                         (e->type == ET_GUARD)    ? 1400u : 1100u;
+
+                    int arow, anf;
+                    if (e->etat == ES_DEAD) {
+                        arow = ANIM_E_DEATH;
+                        anf  = (e->type == ET_ENFORCER) ? ENFORCER_NFRAMES[2] :
+                               (e->type == ET_GUARD)    ? GUARD_NFRAMES[2]    :
+                                                          WORKER_NFRAMES[2];
+                    } else {
+                        arow = ANIM_E_WALK;
+                        anf  = (e->type == ET_ENFORCER) ? ENFORCER_NFRAMES[0] :
+                               (e->type == ET_GUARD)    ? GUARD_NFRAMES[0]    :
+                                                          WORKER_NFRAMES[0];
+                    }
+                    animation_init(&e->anim, bg->enemySheets[e->type],
+                                   6, 3, arow, anf,
+                                   ENEMY_ANIM_FPS[arow],
+                                   (e->etat != ES_DEAD) ? 1 : 0);
+                    nbEnnemisLus++;
+                }
+            }
+        }
+    }
+
+    fclose(fp);
+
+    bg->nbEnnemis = nbEnnemisLus;
+    *tempsDepart  = SDL_GetTicks() - elapsed_ms;
+    return 1;
+}
+
 /* ═══ LIBÉRATION ═══ */
 
 void wagons_liberer(Background *bg)
