@@ -138,13 +138,12 @@ int main(int argc, char *argv[])
 
             /* Update combat systems */
             ennemis_update(bg.ennemis, &bg.nbEnnemis, bg.wagonActif, dt,
-                           bg.joueur.x, bg.joueur.y, bg.joueur.w, bg.joueur.h,
-                           &bg.joueur.hp, &bg.joueur.etat, &bg.joueur.anim,
+                           bg.joueurs, bg.nbJoueursActifs,
                            WAGON_SOL_Y, WAGON_PLAF_Y);
-            balles_update(bg.balles, &bg.nbBalles,
+            balles_update(bg.balles[0], &bg.nbBalles[0],
                           bg.ennemis, &bg.nbEnnemis,
-                          &bg.joueur.hp, &bg.joueur.etat, &bg.joueur.anim,
-                          bg.joueur.x, bg.joueur.y, bg.joueur.w, bg.joueur.h);
+                          &bg.joueurs[0].hp, &bg.joueurs[0].etat, &bg.joueurs[0].anim,
+                          bg.joueurs[0].x, bg.joueurs[0].y, bg.joueurs[0].w, bg.joueurs[0].h);
             hitfx_update(bg.hitFx, &bg.nbHitFx, dt);
 
             transitionSlide_update(&bg);
@@ -191,7 +190,7 @@ int main(int argc, char *argv[])
             SDL_RenderDrawLine(renderer, 0, H_ECRAN-46, W_ECRAN, H_ECRAN-46);
 
             char buf[64];
-            snprintf(buf, sizeof(buf), "Score : %d   PV : %d", scoreJoueur, bg.joueur.hp);
+            snprintf(buf, sizeof(buf), "Score : %d   PV : %d", scoreJoueur, bg.joueurs[0].hp);
             afficherTexte(renderer, police, buf, jaune, 15, H_ECRAN-42);
 
             const char *noms[MAX_WAGONS] = {

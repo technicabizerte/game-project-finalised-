@@ -52,6 +52,7 @@
 #define WAGON_PORTE_H   112
 
 /* ══ Joueur ══ */
+#define NB_JOUEURS_MAX   2
 #define MAX_NEIGE        300
 #define GRAVITE_JEU      0.40f
 #define JUMP_FORCE       -9.5f
@@ -214,7 +215,8 @@ typedef struct {
     int                 nbDestructibles;
 
     ParticuleNeige neige[MAX_NEIGE];
-    Joueur         joueur;
+    Joueur         joueurs[NB_JOUEURS_MAX];
+    int            nbJoueursActifs;
     FlashEcran     flash;
 
     StyleWagon     stylesWagons[MAX_WAGONS];
@@ -231,8 +233,8 @@ typedef struct {
     SDL_Texture *hitFxSheet;
 
     /* ══ Combat state ══ */
-    Balle      balles[MAX_BALLES];
-    int        nbBalles;
+    Balle      balles[NB_JOUEURS_MAX][MAX_BALLES];
+    int        nbBalles[NB_JOUEURS_MAX];
 
     Ennemi     ennemis[MAX_ENNEMIS];
     int        nbEnnemis;
@@ -291,9 +293,15 @@ void minimap_afficher(Background *bg, SDL_Renderer *renderer);
 void transitionSlide_declencher(Background *bg, int direction);
 void transitionSlide_update(Background *bg);
 
+void joueur_init_interieur_idx(Background *bg, int idx);
 void joueur_init_interieur(Background *bg);
+void joueur_update_interieur_idx(Background *bg, int idx,
+                                  int gauche, int droite,
+                                  int sauter, int tirer, int melee, float dt);
 void joueur_update_interieur(Background *bg, int gauche, int droite,
                               int sauter, int tirer, int melee, float dt);
+void joueur_afficher_interieur_idx(Background *bg, SDL_Renderer *renderer,
+                                    int idx, int ox);
 void joueur_afficher_interieur(Background *bg, SDL_Renderer *renderer, int ox);
 
 void neige_init(Background *bg);
@@ -301,5 +309,10 @@ void neige_update(Background *bg);
 void flash_declencher(Background *bg);
 void flash_update(Background *bg);
 void flash_afficher(Background *bg, SDL_Renderer *renderer);
+
+/* Declared here (not combat.h) because it needs Joueur */
+void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
+                    Joueur *joueurs, int nbJoueurs,
+                    int wagonSolY, int wagonPlafY);
 
 #endif

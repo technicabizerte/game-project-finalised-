@@ -86,7 +86,9 @@ int background_init(Background *bg, SDL_Renderer *renderer, int niveau)
     bg->bulletTex    = NULL;
     bg->muzzleTex    = NULL;
     bg->hitFxSheet   = NULL;
-    bg->nbBalles     = 0;
+    bg->nbBalles[0]     = 0;
+    bg->nbBalles[1]     = 0;
+    bg->nbJoueursActifs = 1;
     bg->nbEnnemis    = 0;
     bg->nbHitFx      = 0;
     memset(bg->balles,  0, sizeof(bg->balles));
@@ -430,6 +432,7 @@ void wagonsInterieurs_init(Background *bg, SDL_Renderer *renderer)
     bg->wagonActif = 0;
     bg->parallaxOffset = 0.0f;
     bg->transitionSlide.actif = 0;
+    bg->nbJoueursActifs = 1;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -591,31 +594,40 @@ static void wagon_dessiner(Background *bg, SDL_Renderer *renderer, int idx, int 
    JOUEUR — INTÉRIEUR
    ═══════════════════════════════════════════════════ */
 
-void joueur_init_interieur(Background *bg)
+void joueur_init_interieur_idx(Background *bg, int idx)
 {
-    bg->joueur.x    = (float)(W_ECRAN/2 - JOUEUR_W/2);
-    bg->joueur.y    = (float)(WAGON_SOL_Y - JOUEUR_H);
-    bg->joueur.velX = bg->joueur.velY = 0.0f;
-    bg->joueur.w    = JOUEUR_W;
-    bg->joueur.h    = JOUEUR_H;
-    bg->joueur.auSol      = 1;
-    bg->joueur.actif      = 1;
-    bg->joueur.direction  = 1;
-    bg->joueur.hp         = JOUEUR_MAX_HP;
-    bg->joueur.etat       = PS_IDLE;
-    bg->joueur.lastShootTick = 0;
-    bg->joueur.lastMeleeTick = 0;
-    bg->joueur.muzzleFrames  = 0;
-    animation_init(&bg->joueur.anim, bg->playerSheet,
+    float spawnX = (float)(W_ECRAN/2 - JOUEUR_W/2) + (idx == 1 ? 200.0f : 0.0f);
+    Joueur *j = &bg->joueurs[idx];
+    j->x    = spawnX;
+    j->y    = (float)(WAGON_SOL_Y - JOUEUR_H);
+    j->velX = j->velY = 0.0f;
+    j->w    = JOUEUR_W;
+    j->h    = JOUEUR_H;
+    j->auSol         = 1;
+    j->actif         = 1;
+    j->direction     = 1;
+    j->hp            = JOUEUR_MAX_HP;
+    j->etat          = PS_IDLE;
+    j->lastShootTick = 0;
+    j->lastMeleeTick = 0;
+    j->muzzleFrames  = 0;
+    animation_init(&j->anim, bg->playerSheet,
                    PLAYER_COLS, PLAYER_ROWS,
                    ANIM_P_IDLE, PLAYER_NFRAMES[ANIM_P_IDLE],
                    PLAYER_ANIM_FPS[ANIM_P_IDLE], PLAYER_ANIM_LOOP[ANIM_P_IDLE]);
 }
 
-void joueur_update_interieur(Background *bg, int gauche, int droite,
-                              int sauter, int tirer, int melee, float dt)
+void joueur_init_interieur(Background *bg)
 {
-    Joueur *j = &bg->joueur;
+    joueur_init_interieur_idx(bg, 0);
+    if (bg->nbJoueursActifs >= 2) joueur_init_interieur_idx(bg, 1);
+}
+
+void joueur_update_interieur_idx(Background *bg, int idx,
+                                  int gauche, int droite,
+                                  int sauter, int tirer, int melee, float dt)
+{
+    Joueur *j = &bg->joueurs[idx];
     if (!j->actif) return;
 
     Uint32 now = SDL_GetTicks();
@@ -665,8 +677,8 @@ void joueur_update_interieur(Background *bg, int gauche, int droite,
 
     if (bg->transitionSlide.actif) return;
 
-    int idx = bg->wagonActif;
-    StyleWagon *s = &bg->stylesWagons[idx];
+    int widx = bg->wagonActif;
+    StyleWagon *s = &bg->stylesWagons[widx];
 
     /* ── Combat actions ── */
     if (tirer && (int)(now - j->lastShootTick) >= SHOOT_COOLDOWN_MS) {
@@ -679,9 +691,9 @@ void joueur_update_interieur(Background *bg, int gauche, int droite,
         j->muzzleX = j->x + (j->direction == 1 ? (float)JOUEUR_W + 4 : -4.0f);
         j->muzzleY = j->y + JOUEUR_H * 0.35f;
 
-        /* Spawn bullet */
-        if (bg->nbBalles < MAX_BALLES) {
-            Balle *b = &bg->balles[bg->nbBalles++];
+        /* Spawn bullet in this player's pool */
+        if (bg->nbBalles[idx] < MAX_BALLES) {
+            Balle *b = &bg->balles[idx][bg->nbBalles[idx]++];
             b->actif = 1;
             b->x     = j->muzzleX;
             b->y     = j->y + JOUEUR_H * 0.4f;
@@ -700,7 +712,7 @@ void joueur_update_interieur(Background *bg, int gauche, int droite,
         /* Instant melee hit check */
         for (int i = 0; i < bg->nbEnnemis; i++) {
             Ennemi *e = &bg->ennemis[i];
-            if (!e->actif || e->wagon != idx || e->etat == ES_DEAD) continue;
+            if (!e->actif || e->wagon != widx || e->etat == ES_DEAD) continue;
             float ex = e->x + (j->direction == 1 ? 0 : (float)JOUEUR_W);
             float dist = ex - (j->x + JOUEUR_W/2.0f);
             if (dist < 0) dist = -dist;
@@ -772,24 +784,33 @@ void joueur_update_interieur(Background *bg, int gauche, int droite,
                           PLAYER_NFRAMES[ANIM_P_IDLE], PLAYER_ANIM_FPS[ANIM_P_IDLE], 1);
     }
 
-    /* ── Doors ── */
-    if (j->x + j->w >= (float)(WAGON_MUR_D_X - WAGON_PORTE_W) && idx < MAX_WAGONS-1) {
-        transitionSlide_declencher(bg, 1); return;
-    }
-    if (j->x <= (float)(WAGON_MUR_G_X + WAGON_PORTE_W) && idx > 0) {
-        transitionSlide_declencher(bg, -1); return;
+    /* ── Doors (only P1 triggers wagon transitions) ── */
+    if (idx == 0) {
+        if (j->x + j->w >= (float)(WAGON_MUR_D_X - WAGON_PORTE_W) && widx < MAX_WAGONS-1) {
+            transitionSlide_declencher(bg, 1); return;
+        }
+        if (j->x <= (float)(WAGON_MUR_G_X + WAGON_PORTE_W) && widx > 0) {
+            transitionSlide_declencher(bg, -1); return;
+        }
     }
 
     /* ── Wall stops ── */
-    int leftStop  = WAGON_MUR_G_X + (idx > 0 ? WAGON_PORTE_W : 0);
-    int rightStop = WAGON_MUR_D_X - (idx < MAX_WAGONS-1 ? WAGON_PORTE_W : 0) - j->w;
+    int leftStop  = WAGON_MUR_G_X + (widx > 0 ? WAGON_PORTE_W : 0);
+    int rightStop = WAGON_MUR_D_X - (widx < MAX_WAGONS-1 ? WAGON_PORTE_W : 0) - j->w;
     if (j->x < (float)leftStop)  { j->x = (float)leftStop;  j->velX = 0.0f; }
     if (j->x > (float)rightStop) { j->x = (float)rightStop; j->velX = 0.0f; }
 }
 
-void joueur_afficher_interieur(Background *bg, SDL_Renderer *renderer, int ox)
+void joueur_update_interieur(Background *bg, int gauche, int droite,
+                              int sauter, int tirer, int melee, float dt)
 {
-    Joueur *j = &bg->joueur;
+    joueur_update_interieur_idx(bg, 0, gauche, droite, sauter, tirer, melee, dt);
+}
+
+void joueur_afficher_interieur_idx(Background *bg, SDL_Renderer *renderer,
+                                    int idx, int ox)
+{
+    Joueur *j = &bg->joueurs[idx];
     if (!j->actif) return;
 
     /* Draw sprite sheet frame */
@@ -827,6 +848,11 @@ void joueur_afficher_interieur(Background *bg, SDL_Renderer *renderer, int ox)
     }
 }
 
+void joueur_afficher_interieur(Background *bg, SDL_Renderer *renderer, int ox)
+{
+    joueur_afficher_interieur_idx(bg, renderer, 0, ox);
+}
+
 /* ═══════════════════════════════════════════════════
    TRANSITION GLISSEMENT
    ═══════════════════════════════════════════════════ */
@@ -850,12 +876,12 @@ void transitionSlide_update(Background *bg)
         bg->wagonActif = bg->transitionSlide.wagonCible;
         /* Repositionner joueur à l'entrée du nouveau wagon */
         if (bg->transitionSlide.direction == 1)
-            bg->joueur.x = (float)(WAGON_MUR_G_X + WAGON_PORTE_W + 6);
+            bg->joueurs[0].x = (float)(WAGON_MUR_G_X + WAGON_PORTE_W + 6);
         else
-            bg->joueur.x = (float)(WAGON_MUR_D_X - WAGON_PORTE_W - JOUEUR_W - 6);
-        bg->joueur.y    = (float)(WAGON_SOL_Y - JOUEUR_H);
-        bg->joueur.velX = bg->joueur.velY = 0.0f;
-        bg->joueur.auSol = 1;
+            bg->joueurs[0].x = (float)(WAGON_MUR_D_X - WAGON_PORTE_W - JOUEUR_W - 6);
+        bg->joueurs[0].y    = (float)(WAGON_SOL_Y - JOUEUR_H);
+        bg->joueurs[0].velX = bg->joueurs[0].velY = 0.0f;
+        bg->joueurs[0].auSol = 1;
     }
 }
 
@@ -873,7 +899,7 @@ void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
     if (!bg->transitionSlide.actif) {
         wagon_dessiner(bg, renderer, idx, 0);
         ennemis_afficher(bg->ennemis, bg->nbEnnemis, idx, renderer);
-        balles_afficher(bg->balles, bg->nbBalles, renderer, bg->bulletTex);
+        balles_afficher(bg->balles[0], bg->nbBalles[0], renderer, bg->bulletTex);
         hitfx_afficher(bg->hitFx, bg->nbHitFx, renderer);
         joueur_afficher_interieur(bg, renderer, 0);
     } else {
@@ -895,9 +921,9 @@ void wagonsInterieurs_afficher(Background *bg, SDL_Renderer *renderer)
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
     /* ── Player HP bar ── */
-    if (bg->joueur.hp > 0) {
+    if (bg->joueurs[0].hp > 0) {
         int barW   = 120;
-        int filled = (bg->joueur.hp * barW) / JOUEUR_MAX_HP;
+        int filled = (bg->joueurs[0].hp * barW) / JOUEUR_MAX_HP;
         SDL_Rect bgBar = {14, H_ECRAN - 44, barW, 6};
         SDL_Rect fgBar = {14, H_ECRAN - 44, filled, 6};
         SDL_SetRenderDrawColor(renderer, 60, 20, 20, 255);
@@ -965,8 +991,8 @@ void minimap_afficher(Background *bg, SDL_Renderer *renderer)
     }
 
     /* player — map feet + center-x, drawn last so always on top */
-    float pfeet_x = bg->joueur.x + JOUEUR_W / 2.0f;
-    float pfeet_y = bg->joueur.y + JOUEUR_H;
+    float pfeet_x = bg->joueurs[0].x + JOUEUR_W / 2.0f;
+    float pfeet_y = bg->joueurs[0].y + JOUEUR_H;
     int px = MM_X + (int)((pfeet_x - WAGON_MUR_G_X) * (float)MM_W / WX);
     int py = MM_Y + (int)((pfeet_y - WAGON_PLAF_Y)  * (float)MM_H / WY);
     if (px < MM_X + 2)        px = MM_X + 2;

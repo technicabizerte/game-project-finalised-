@@ -180,10 +180,7 @@ void hitfx_afficher(HitEffect *fx, int nb, SDL_Renderer *r);
 
 void ennemis_spawn(Ennemi *ennemis, int *nb, TypeEnnemi type,
                    float x, float y, int wagon, SDL_Texture *sheet);
-void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
-                    float joueurX, float joueurY, int joueurW, int joueurH,
-                    int *joueurHp, EtatJoueur *joueurEtat, AnimationSystem *joueurAnim,
-                    int wagonSolY, int wagonPlafY);
+/* ennemis_update declared in background.h (needs Joueur type) */
 void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r);
 
 #endif

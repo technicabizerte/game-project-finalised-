@@ -239,8 +239,7 @@ void ennemis_spawn(Ennemi *ennemis, int *nb, TypeEnnemi type,
 }
 
 void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
-                    float joueurX, float joueurY, int joueurW, int joueurH,
-                    int *joueurHp, EtatJoueur *joueurEtat, AnimationSystem *joueurAnim,
+                    Joueur *joueurs, int nbJoueurs,
                     int wagonSolY, int wagonPlafY)
 {
     Uint32 now = SDL_GetTicks();
@@ -274,25 +273,43 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
         }
         if (e->y < (float)wagonPlafY) { e->y = (float)wagonPlafY; e->velY = 0; }
 
-        float dx   = joueurX - e->x;
-        float dist = dx < 0 ? -dx : dx;
-        int   rng  = enemy_rng(e->type);
+        /* Pick nearest living player as target */
+        int   targetIdx = -1;
+        float minDist   = 1e9f;
+        for (int p = 0; p < nbJoueurs; p++) {
+            if (!joueurs[p].actif || joueurs[p].hp <= 0) continue;
+            float d = joueurs[p].x - e->x;
+            if (d < 0) d = -d;
+            if (d < minDist) { minDist = d; targetIdx = p; }
+        }
+
+        /* No living players — idle in place */
+        if (targetIdx < 0) {
+            animation_set_row(&e->anim, ANIM_E_WALK,
+                              enemy_nwalk(e->type), ENEMY_ANIM_FPS[ANIM_E_WALK], 1);
+            continue;
+        }
+
+        Joueur *tgt  = &joueurs[targetIdx];
+        float dx     = tgt->x - e->x;
+        float dist   = dx < 0 ? -dx : dx;
+        int   rng    = enemy_rng(e->type);
 
         if (e->etat == ES_ATTACK) {
             if (e->anim.finished) {
-                /* Deal damage if still in range */
-                SDL_Rect jr = {(int)joueurX, (int)joueurY, joueurW, joueurH};
+                /* Deal damage if still in range with the targeted player */
+                SDL_Rect jr = {(int)tgt->x, (int)tgt->y, tgt->w, tgt->h};
                 SDL_Rect er = {(int)e->x - 10, (int)e->y,
                                enemy_hbw(e->type) + 20, enemy_hbh(e->type)};
-                if (SDL_HasIntersection(&jr, &er) && *joueurEtat != PS_DEAD) {
-                    *joueurHp -= enemy_dmg(e->type);
-                    if (*joueurHp < 0) *joueurHp = 0;
-                    EtatJoueur next = (*joueurHp == 0) ? PS_DEAD : PS_HIT;
-                    if (*joueurEtat != PS_HIT && *joueurEtat != PS_DEAD) {
-                        animation_set_row(joueurAnim, ANIM_P_HIT,
+                if (SDL_HasIntersection(&jr, &er) && tgt->etat != PS_DEAD) {
+                    tgt->hp -= enemy_dmg(e->type);
+                    if (tgt->hp < 0) tgt->hp = 0;
+                    EtatJoueur next = (tgt->hp == 0) ? PS_DEAD : PS_HIT;
+                    if (tgt->etat != PS_HIT && tgt->etat != PS_DEAD) {
+                        animation_set_row(&tgt->anim, ANIM_P_HIT,
                                           PLAYER_NFRAMES[ANIM_P_HIT],
                                           PLAYER_ANIM_FPS[ANIM_P_HIT], 0);
-                        *joueurEtat = next;
+                        tgt->etat = next;
                     }
                 }
                 e->etat = ES_WALK;
@@ -304,7 +321,7 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
             continue;
         }
 
-        /* Walk toward player */
+        /* Walk toward nearest player */
         e->direction = (dx >= 0) ? 1 : -1;
         if (dist > (float)rng) {
             e->x += (dx > 0 ? 1.0f : -1.0f) * enemy_spd(e->type);
@@ -344,7 +361,7 @@ void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r)
             if (e->hitFlashMs > 0)
                 SDL_SetTextureColorMod(e->anim.texture, 255, 80, 80);
 
-            SDL_RendererFlip flip = (e->direction == 1) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+            SDL_RendererFlip flip = (e->direction == -1) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
             SDL_RenderCopyEx(r, e->anim.texture, &src, &dst, 0, NULL, flip);
 
             if (e->hitFlashMs > 0)
