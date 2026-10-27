@@ -1,0 +1,6 @@
+[llm] launched server pid=67011, waiting for http://127.0.0.1:8080 ...
+[llm] server ready
+[arduino P1] /dev/ttyUSB0 ready (115200 8N1)
+[arduino P2] open /dev/ttyACM0: No such file or directory (controller disabled)
+[arduino P1] calibrated center: X=509 Y=500 (swap=0 invX=1 invY=1)
+[versus] renderer_output=1024x576  window_size=1024x576

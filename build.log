@@ -1,0 +1,178 @@
+In file included from main.c:35:
+door_anim.h:54:50: warning: "/*" within comment [-Wcomment]
+   54 | /* Lifecycle.  init() loads the three assets/door/*.png textures once. */
+      |                                                   
+In file included from background.c:5:
+door_anim.h:54:50: warning: "/*" within comment [-Wcomment]
+   54 | /* Lifecycle.  init() loads the three assets/door/*.png textures once. */
+      |                                                   
+combat.c:283:14: warning: ‘enemy_ndth’ defined but not used [-Wunused-function]
+  283 | static int   enemy_ndth(TypeEnnemi t) { return t==ET_GUARD?GUARD_NFRAMES[2]:t==ET_WORKER?WORKER_NFRAMES[2]:ENFORCER_NFRAMES[2]; }
+      |              ^~~~~~~~~~
+gameplay.c: In function ‘render_lives_row’:
+gameplay.c:1322:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+ 1322 |             if (pw < 1) pw = 1; if (pw > heartW * 4) pw = heartW * 4;
+      |             ^~
+gameplay.c:1322:33: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+ 1322 |             if (pw < 1) pw = 1; if (pw > heartW * 4) pw = heartW * 4;
+      |                                 ^~
+gameplay.c:1323:13: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+ 1323 |             if (ph < 1) ph = 1; if (ph > heartH * 4) ph = heartH * 4;
+      |             ^~
+gameplay.c:1323:33: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+ 1323 |             if (ph < 1) ph = 1; if (ph > heartH * 4) ph = heartH * 4;
+      |                                 ^~
+gameplay.c: In function ‘gameplay_render_hud’:
+gameplay.c:1519:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+ 1519 |         if (alpha < 0) alpha = 0; if (alpha > 220) alpha = 220;
+      |         ^~
+gameplay.c:1519:35: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+ 1519 |         if (alpha < 0) alpha = 0; if (alpha > 220) alpha = 220;
+      |                                   ^~
+llm.c: In function ‘worker_main’:
+llm.c:279:39: warning: ‘/completion’ directive output may be truncated writing 11 bytes into a region of size between 1 and 256 [-Wformat-truncation=]
+  279 |         snprintf(url, sizeof(url), "%s/completion", llm->url);
+      |                                       ^~~~~~~~~~~
+llm.c:279:9: note: ‘snprintf’ output between 12 and 267 bytes into a destination of size 256
+  279 |         snprintf(url, sizeof(url), "%s/completion", llm->url);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+npc_dialogue.c: In function ‘npc_dialogue_render’:
+npc_dialogue.c:411:44: warning: ‘%s’ directive output may be truncated writing up to 95 bytes into a region of size between 44 and 75 [-Wformat-truncation=]
+  411 |     snprintf(header, sizeof(header), "%s — %s",
+      |                                            ^~
+npc_dialogue.c:411:5: note: ‘snprintf’ output between 6 and 132 bytes into a destination of size 80
+  411 |     snprintf(header, sizeof(header), "%s — %s",
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  412 |              dlg->npc_name, dlg->npc_role);
+      |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+outro.c:300:13: warning: ‘clear_color’ defined but not used [-Wunused-function]
+  300 | static void clear_color(SDL_Renderer *r, Uint8 R, Uint8 G, Uint8 B)
+      |             ^~~~~~~~~~~
+In file included from door_anim.c:26:
+door_anim.h:54:50: warning: "/*" within comment [-Wcomment]
+   54 | /* Lifecycle.  init() loads the three assets/door/*.png textures once. */
+      |                                                   
+In file included from boss_intro.c:37:
+door_anim.h:54:50: warning: "/*" within comment [-Wcomment]
+   54 | /* Lifecycle.  init() loads the three assets/door/*.png textures once. */
+      |                                                   
+puzzle/enigme2.c: In function ‘run_enigme2_with_renderer’:
+puzzle/enigme2.c:1468:9: warning: unused variable ‘restart’ [-Wunused-variable]
+ 1468 |     int restart = 0;
+      |         ^~~~~~~
+puzzle/enigme2.c: In function ‘charger_images_puzzle’:
+puzzle/enigme2.c:267:21: warning: ‘/puzzle_’ directive output may be truncated writing 8 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  267 |                  "%s/puzzle_%d_board.png", base, i + 1);
+      |                     ^~~~~~~~
+puzzle/enigme2.c:267:18: note: directive argument in the range [1, 5]
+  267 |                  "%s/puzzle_%d_board.png", base, i + 1);
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:266:9: note: ‘snprintf’ output between 20 and 531 bytes into a destination of size 512
+  266 |         snprintf(e->tab_images[i].chemin_image, TAILLE_CHEMIN,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  267 |                  "%s/puzzle_%d_board.png", base, i + 1);
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:269:21: warning: ‘/puzzle_’ directive output may be truncated writing 8 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  269 |                  "%s/puzzle_%d_prop_A.png", base, i + 1);
+      |                     ^~~~~~~~
+puzzle/enigme2.c:269:18: note: directive argument in the range [1, 5]
+  269 |                  "%s/puzzle_%d_prop_A.png", base, i + 1);
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:268:9: note: ‘snprintf’ output between 21 and 532 bytes into a destination of size 512
+  268 |         snprintf(e->tab_images[i].chemin_propositions[0], TAILLE_CHEMIN,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  269 |                  "%s/puzzle_%d_prop_A.png", base, i + 1);
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:271:21: warning: ‘/puzzle_’ directive output may be truncated writing 8 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  271 |                  "%s/puzzle_%d_prop_B.png", base, i + 1);
+      |                     ^~~~~~~~
+puzzle/enigme2.c:271:18: note: directive argument in the range [1, 5]
+  271 |                  "%s/puzzle_%d_prop_B.png", base, i + 1);
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:270:9: note: ‘snprintf’ output between 21 and 532 bytes into a destination of size 512
+  270 |         snprintf(e->tab_images[i].chemin_propositions[1], TAILLE_CHEMIN,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  271 |                  "%s/puzzle_%d_prop_B.png", base, i + 1);
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:273:21: warning: ‘/puzzle_’ directive output may be truncated writing 8 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  273 |                  "%s/puzzle_%d_prop_C.png", base, i + 1);
+      |                     ^~~~~~~~
+puzzle/enigme2.c:273:18: note: directive argument in the range [1, 5]
+  273 |                  "%s/puzzle_%d_prop_C.png", base, i + 1);
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2.c:272:9: note: ‘snprintf’ output between 21 and 532 bytes into a destination of size 512
+  272 |         snprintf(e->tab_images[i].chemin_propositions[2], TAILLE_CHEMIN,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  273 |                  "%s/puzzle_%d_prop_C.png", base, i + 1);
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2_systems.c: In function ‘wrap_text’:
+puzzle/enigme2_systems.c:221:66: warning: ‘snprintf’ output may be truncated before the last format character [-Wformat-truncation=]
+  221 |                     snprintf(test_line, sizeof(test_line), "%s %s", current_line, token);
+      |                                                                  ^
+puzzle/enigme2_systems.c:221:21: note: ‘snprintf’ output 2 or more bytes (assuming 129) into a destination of size 128
+  221 |                     snprintf(test_line, sizeof(test_line), "%s %s", current_line, token);
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+puzzle/enigme2_systems.c:245:58: warning: ‘snprintf’ output may be truncated before the last format character [-Wformat-truncation=]
+  245 |             snprintf(test_line, sizeof(test_line), "%s %s", current_line, token);
+      |                                                          ^
+puzzle/enigme2_systems.c:245:13: note: ‘snprintf’ output 2 or more bytes (assuming 129) into a destination of size 128
+  245 |             snprintf(test_line, sizeof(test_line), "%s %s", current_line, token);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+quizz/enigme/enigme.c: In function ‘text_tex’:
+quizz/enigme/enigme.c:165:5: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  165 |     if(w)*w=s->w;if(h)*h=s->h;
+      |     ^~
+quizz/enigme/enigme.c:165:18: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  165 |     if(w)*w=s->w;if(h)*h=s->h;
+      |                  ^~
+quizz/enigme/enigme.c: In function ‘pending_rotate_skip’:
+quizz/enigme/enigme.c:469:5: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  469 |     if(n<=1)return;int first=p[0];
+      |     ^~
+quizz/enigme/enigme.c:469:20: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  469 |     if(n<=1)return;int first=p[0];
+      |                    ^~~
+quizz/enigme/enigme.c:470:5: warning: this ‘for’ clause does not guard... [-Wmisleading-indentation]
+  470 |     for(int i=0;i<n-1;i++)p[i]=p[i+1];p[n-1]=first;
+      |     ^~~
+quizz/enigme/enigme.c:470:39: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+  470 |     for(int i=0;i<n-1;i++)p[i]=p[i+1];p[n-1]=first;
+      |                                       ^
+quizz/enigme/enigme.c: In function ‘pending_pop’:
+quizz/enigme/enigme.c:474:5: warning: this ‘for’ clause does not guard... [-Wmisleading-indentation]
+  474 |     for(int i=0;i<(*n)-1;i++)p[i]=p[i+1];(*n)--;
+      |     ^~~
+quizz/enigme/enigme.c:474:42: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+  474 |     for(int i=0;i<(*n)-1;i++)p[i]=p[i+1];(*n)--;
+      |                                          ^
+quizz/enigme/enigme.c: In function ‘enigme_run’:
+quizz/enigme/enigme.c:498:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  498 |         if(bg_menu)SDL_DestroyTexture(bg_menu);if(bg_quiz)SDL_DestroyTexture(bg_quiz);
+      |         ^~
+quizz/enigme/enigme.c:498:48: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  498 |         if(bg_menu)SDL_DestroyTexture(bg_menu);if(bg_quiz)SDL_DestroyTexture(bg_quiz);
+      |                                                ^~
+quizz/enigme/enigme.c:499:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  499 |         if(title_font)TTF_CloseFont(title_font);if(small_font)TTF_CloseFont(small_font);
+      |         ^~
+quizz/enigme/enigme.c:499:49: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  499 |         if(title_font)TTF_CloseFont(title_font);if(small_font)TTF_CloseFont(small_font);
+      |                                                 ^~
+quizz/enigme/enigme.c:500:9: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  500 |         if(big_font)TTF_CloseFont(big_font);if(audio_ok)Mix_CloseAudio();
+      |         ^~
+quizz/enigme/enigme.c:500:45: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  500 |         if(big_font)TTF_CloseFont(big_font);if(audio_ok)Mix_CloseAudio();
+      |                                             ^~
+quizz/enigme/enigme.c:700:17: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  700 |                 if(audio_ok&&Mix_PlayingMusic())Mix_HaltMusic();music_started=0;rtz_active=0;
+      |                 ^~
+quizz/enigme/enigme.c:700:65: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  700 |                 if(audio_ok&&Mix_PlayingMusic())Mix_HaltMusic();music_started=0;rtz_active=0;
+      |                                                                 ^~~~~~~~~~~~~
+quizz/enigme/enigme.c:707:21: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+  707 |                     if(audio_ok&&Mix_PlayingMusic())Mix_HaltMusic();music_started=0;rtz_active=0;
+      |                     ^~
+quizz/enigme/enigme.c:707:69: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+  707 |                     if(audio_ok&&Mix_PlayingMusic())Mix_HaltMusic();music_started=0;rtz_active=0;
+      |                                                                     ^~~~~~~~~~~~~

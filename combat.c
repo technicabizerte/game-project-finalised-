@@ -1,10 +1,11 @@
 #include "combat.h"
 #include "background.h"
+#include "effects.h"
+#include "damage_numbers.h"
+#include "boss_anim.h"
+#include "boss_ai.h"
+#include "boss_hud.h"               /* hitstop_trigger on player attacks  */
 #include <stdio.h>
-
-/* ═══════════════════════════════════════════
-   ANIMATION SYSTEM
-   ═══════════════════════════════════════════ */
 
 void animation_init(AnimationSystem *anim, SDL_Texture *tex,
                     int num_cols, int num_rows,
@@ -68,10 +69,6 @@ void animation_set_row(AnimationSystem *anim,
     anim->finished      = 0;
 }
 
-/* ═══════════════════════════════════════════
-   TEXTURE LOADING
-   ═══════════════════════════════════════════ */
-
 SDL_Texture *combat_loadTexture(SDL_Renderer *r, const char *path)
 {
     SDL_Surface *surf = IMG_Load(path);
@@ -84,10 +81,6 @@ SDL_Texture *combat_loadTexture(SDL_Renderer *r, const char *path)
     SDL_FreeSurface(surf);
     return t;
 }
-
-/* ═══════════════════════════════════════════
-   BULLETS
-   ═══════════════════════════════════════════ */
 
 void balles_update(Balle *balles, int *nb,
                    Ennemi *ennemis, int *nbEnnemis,
@@ -102,22 +95,110 @@ void balles_update(Balle *balles, int *nb,
         if (!b->actif) continue;
 
         b->x += b->velX;
-        if (b->x < -20 || b->x > W_ECRAN + 20) { b->actif = 0; continue; }
+        if (b->x < WAGON_MUR_G_X || b->x > WAGON_MUR_D_X) { b->actif = 0; continue; }
 
         SDL_Rect br = {(int)b->x, (int)b->y, BULLET_DRAW_W, BULLET_DRAW_H};
         for (int j = 0; j < *nbEnnemis; j++) {
             Ennemi *e = &ennemis[j];
-            if (!e->actif || e->etat == ES_DEAD) continue;
-            int hw = (e->type == ET_GUARD) ? GUARD_HBW  :
-                     (e->type == ET_WORKER)? WORKER_HBW : ENFORCER_HBW;
-            int hh = (e->type == ET_GUARD) ? GUARD_HBH  :
-                     (e->type == ET_WORKER)? WORKER_HBH : ENFORCER_HBH;
+            if (!e->actif || e->etat == ES_DEAD || e->wagon != b->wagon) continue;
+            int hw = ennemi_hbw(e);
+            int hh = ennemi_hbh(e);
             SDL_Rect er = {(int)e->x, (int)e->y, hw, hh};
             if (SDL_HasIntersection(&br, &er)) {
-                e->hp -= SHOOT_DAMAGE;
+                int is_boss = ennemi_is_boss(e);
+                int dmg = SHOOT_DAMAGE;
+                e->hp -= dmg;
                 e->hitFlashMs = 120;
                 b->actif = 0;
+                if (is_boss) boss_ai_on_hit();
+                {
+                    DamageNumberType t = (dmg >= DMG_NUM_CRIT_THRESHOLD)
+                                         ? DMG_NUM_CRIT : DMG_NUM_NORMAL;
+                    spawn_damage_number(e->x + hw/2.0f, e->y + hh/3.0f,
+                                        dmg, t);
+                }
+                {
+                    EffectsSystem *efx = effects_global();
+                    int dirSign = (b->velX >= 0.0f) ? 1 : -1;
+                    if (efx) {
+                        effects_on_hit(efx, EFX_ENT_ENEMY, j, dirSign);
+                        effects_spawn_impact(efx, e->x + hw/2.0f,
+                                                  e->y + hh/3.0f,
+                                                  dirSign, dmg);
+                    }
+                    /* Player attack → contact hitstop. */
+                    hitstop_trigger(dmg >= DMG_NUM_CRIT_THRESHOLD ? 0.08f : 0.05f);
+                }
                 if (e->hp <= 0) {
+                    EffectsSystem *efx = effects_global();
+                    int dirSign = (b->velX >= 0.0f) ? 1 : -1;
+                    if (efx) effects_spawn_death_for_enemy(efx, e, dirSign);
+                    /* Kill-tier hitstop — longer than the per-hit pulse. */
+                    hitstop_trigger(0.12f);
+                    int nf = (e->type == ET_ENFORCER) ? ENFORCER_NFRAMES[2] :
+                             (e->type == ET_GUARD)    ? GUARD_NFRAMES[2]    :
+                                                        WORKER_NFRAMES[2];
+                    e->etat = ES_DEAD;
+                    animation_set_row(&e->anim, ANIM_E_DEATH, nf,
+                                      ENEMY_ANIM_FPS[ANIM_E_DEATH], 0);
+                }
+                break;
+            }
+        }
+    }
+}
+
+void balles_update_fx(Balle *balles, int *nb,
+                       Ennemi *ennemis, int *nbEnnemis,
+                       ParticleField *fx, HitEffect *hfx, int *nbHfx,
+                       SDL_Texture *hitFxSheet)
+{
+    for (int i = 0; i < *nb; i++) {
+        Balle *b = &balles[i];
+        if (!b->actif) continue;
+
+        b->x += b->velX;
+        if (b->x < WAGON_MUR_G_X || b->x > WAGON_MUR_D_X) { b->actif = 0; continue; }
+
+        SDL_Rect br = {(int)b->x, (int)b->y, BULLET_DRAW_W, BULLET_DRAW_H};
+        for (int j = 0; j < *nbEnnemis; j++) {
+            Ennemi *e = &ennemis[j];
+            if (!e->actif || e->etat == ES_DEAD || e->wagon != b->wagon) continue;
+            int hw = ennemi_hbw(e);
+            int hh = ennemi_hbh(e);
+            SDL_Rect er = {(int)e->x, (int)e->y, hw, hh};
+            if (SDL_HasIntersection(&br, &er)) {
+                int is_boss = ennemi_is_boss(e);
+                int dmg = SHOOT_DAMAGE;
+                e->hp -= dmg;
+                e->hitFlashMs = 120;
+                b->actif = 0;
+                if (is_boss) boss_ai_on_hit();
+                {
+                    DamageNumberType t = (dmg >= DMG_NUM_CRIT_THRESHOLD)
+                                         ? DMG_NUM_CRIT : DMG_NUM_NORMAL;
+                    spawn_damage_number(e->x + hw/2.0f, e->y + hh/3.0f,
+                                        dmg, t);
+                }
+                {
+                    EffectsSystem *efx = effects_global();
+                    int dirSign = (b->velX >= 0.0f) ? 1 : -1;
+                    if (efx) {
+                        effects_on_hit(efx, EFX_ENT_ENEMY, j, dirSign);
+                        effects_spawn_impact(efx, e->x + hw/2.0f,
+                                                  e->y + hh/3.0f,
+                                                  dirSign, dmg);
+                    }
+                    hitstop_trigger(dmg >= DMG_NUM_CRIT_THRESHOLD ? 0.08f : 0.05f);
+                }
+                if (fx) particles_burst(fx, e->x + hw/2.0f, e->y + hh/2.0f);
+                if (hfx && nbHfx)
+                    hitfx_spawn(hfx, nbHfx, e->x + hw/2.0f, e->y + hh/2.0f, hitFxSheet);
+                if (e->hp <= 0) {
+                    EffectsSystem *efx = effects_global();
+                    int dirSign = (b->velX >= 0.0f) ? 1 : -1;
+                    if (efx) effects_spawn_death_for_enemy(efx, e, dirSign);
+                    hitstop_trigger(0.12f);
                     int nf = (e->type == ET_ENFORCER) ? ENFORCER_NFRAMES[2] :
                              (e->type == ET_GUARD)    ? GUARD_NFRAMES[2]    :
                                                         WORKER_NFRAMES[2];
@@ -146,10 +227,6 @@ void balles_afficher(Balle *balles, int nb, SDL_Renderer *r, SDL_Texture *bullet
         }
     }
 }
-
-/* ═══════════════════════════════════════════
-   HIT EFFECTS
-   ═══════════════════════════════════════════ */
 
 void hitfx_spawn(HitEffect *fx, int *nbFx, float x, float y, SDL_Texture *sheet)
 {
@@ -193,9 +270,24 @@ void hitfx_afficher(HitEffect *fx, int nb, SDL_Renderer *r, int ox)
     }
 }
 
-/* ═══════════════════════════════════════════
-   ENEMIES
-   ═══════════════════════════════════════════ */
+int ennemi_is_boss(const Ennemi *e)
+{
+    return e && e->type == ET_ENFORCER && e->wagon == MAX_WAGONS - 1;
+}
+int ennemi_hbw(const Ennemi *e)
+{
+    if (!e) return 0;
+    if (e->type == ET_GUARD)  return GUARD_HBW;
+    if (e->type == ET_WORKER) return WORKER_HBW;
+    return ennemi_is_boss(e) ? BOSS_HBW : ENFORCER_HBW;
+}
+int ennemi_hbh(const Ennemi *e)
+{
+    if (!e) return 0;
+    if (e->type == ET_GUARD)  return GUARD_HBH;
+    if (e->type == ET_WORKER) return WORKER_HBH;
+    return ennemi_is_boss(e) ? BOSS_HBH : ENFORCER_HBH;
+}
 
 static int   enemy_hbw(TypeEnnemi t){ return t==ET_GUARD?GUARD_HBW:t==ET_WORKER?WORKER_HBW:ENFORCER_HBW; }
 static int   enemy_hbh(TypeEnnemi t){ return t==ET_GUARD?GUARD_HBH:t==ET_WORKER?WORKER_HBH:ENFORCER_HBH; }
@@ -204,8 +296,14 @@ static int   enemy_dh(TypeEnnemi t) { return t==ET_GUARD?GUARD_DRAW_H:t==ET_WORK
 static int   enemy_nwalk(TypeEnnemi t){ return t==ET_GUARD?GUARD_NFRAMES[0]:t==ET_WORKER?WORKER_NFRAMES[0]:ENFORCER_NFRAMES[0]; }
 static int   enemy_natk(TypeEnnemi t) { return t==ET_GUARD?GUARD_NFRAMES[1]:t==ET_WORKER?WORKER_NFRAMES[1]:ENFORCER_NFRAMES[1]; }
 static int   enemy_ndth(TypeEnnemi t) { return t==ET_GUARD?GUARD_NFRAMES[2]:t==ET_WORKER?WORKER_NFRAMES[2]:ENFORCER_NFRAMES[2]; }
-static int   enemy_dmg(TypeEnnemi t)  { return t==ET_GUARD?GUARD_DMG:t==ET_WORKER?WORKER_DMG:ENFORCER_DMG; }
-static float enemy_spd(TypeEnnemi t)  { return t==ET_GUARD?1.8f:t==ET_WORKER?2.2f:1.2f; }
+static int   enemy_dmg(TypeEnnemi t)  {
+    int base = t==ET_GUARD?GUARD_DMG:t==ET_WORKER?WORKER_DMG:ENFORCER_DMG;
+    return (int)((float)base * 1.25f);
+}
+static float enemy_spd(TypeEnnemi t)  {
+    float base = t==ET_GUARD?1.8f:t==ET_WORKER?2.2f:1.2f;
+    return base * 1.20f;
+}
 static int   enemy_rng(TypeEnnemi t)  { return t==ET_GUARD?55:t==ET_WORKER?45:70; }
 static int   enemy_maxhp(TypeEnnemi t){ return t==ET_GUARD?GUARD_HP:t==ET_WORKER?WORKER_HP:ENFORCER_HP; }
 static int   enemy_cols(TypeEnnemi t) { (void)t; return 6; }
@@ -244,12 +342,37 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
 {
     Uint32 now = SDL_GetTicks();
 
+    EffectsSystem *efx = effects_global();
     for (int i = 0; i < *nb; i++) {
         Ennemi *e = &ennemis[i];
         if (!e->actif || e->wagon != wagonActif) continue;
 
         animation_update(&e->anim, dt);
         if (e->hitFlashMs > 0) e->hitFlashMs -= (int)(dt * 1000.0f);
+
+        /* Final boss has its own dedicated AI (boss_ai.c).  We still tick
+         * the animation update above (so the boss's hit-flash decays) but
+         * skip the generic chase/attack logic entirely. */
+        if (e->type == ET_ENFORCER && e->wagon == MAX_WAGONS - 1)
+            continue;
+
+        /* 200ms stun gate after being hit -- skip the AI so the enemy
+         * doesn't immediately resume attacking through our knockback. */
+        if (e->etat != ES_DEAD &&
+            effects_is_stunned(efx, EFX_ENT_ENEMY, i)) {
+            /* still apply gravity so a mid-air stunned enemy falls */
+            if (!e->auSol) {
+                e->velY += GRAVITE_JEU;
+                e->y    += e->velY;
+                int hh_local = (e->type == ET_GUARD)  ? GUARD_HBH  :
+                               (e->type == ET_WORKER) ? WORKER_HBH : ENFORCER_HBH;
+                if (e->y + hh_local >= wagonSolY) {
+                    e->y = (float)(wagonSolY - hh_local);
+                    e->velY = 0; e->auSol = 1;
+                }
+            }
+            continue;
+        }
 
         if (e->etat == ES_DEAD) {
             if (!e->auSol) {
@@ -263,7 +386,6 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
             continue;
         }
 
-        /* Gravity */
         e->velY += GRAVITE_JEU;
         e->y    += e->velY;
         e->auSol = 0;
@@ -273,7 +395,6 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
         }
         if (e->y < (float)wagonPlafY) { e->y = (float)wagonPlafY; e->velY = 0; }
 
-        /* Pick nearest living player as target */
         int   targetIdx = -1;
         float minDist   = 1e9f;
         for (int p = 0; p < nbJoueurs; p++) {
@@ -283,7 +404,6 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
             if (d < minDist) { minDist = d; targetIdx = p; }
         }
 
-        /* No living players — idle in place */
         if (targetIdx < 0) {
             animation_set_row(&e->anim, ANIM_E_WALK,
                               enemy_nwalk(e->type), ENEMY_ANIM_FPS[ANIM_E_WALK], 1);
@@ -297,19 +417,36 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
 
         if (e->etat == ES_ATTACK) {
             if (e->anim.finished) {
-                /* Deal damage if still in range with the targeted player */
+
                 SDL_Rect jr = {(int)tgt->x, (int)tgt->y, tgt->w, tgt->h};
                 SDL_Rect er = {(int)e->x - 10, (int)e->y,
                                enemy_hbw(e->type) + 20, enemy_hbh(e->type)};
                 if (SDL_HasIntersection(&jr, &er) && tgt->etat != PS_DEAD) {
-                    tgt->hp -= enemy_dmg(e->type);
+                    int _dmg = enemy_dmg(e->type);
+                    tgt->hp -= _dmg;
                     if (tgt->hp < 0) tgt->hp = 0;
+                    spawn_damage_number(tgt->x + tgt->w/2.0f,
+                                        tgt->y + tgt->h/3.0f,
+                                        _dmg, DMG_NUM_PLAYER);
                     EtatJoueur next = (tgt->hp == 0) ? PS_DEAD : PS_HIT;
                     if (tgt->etat != PS_HIT && tgt->etat != PS_DEAD) {
                         animation_set_row(&tgt->anim, ANIM_P_HIT,
                                           PLAYER_NFRAMES[ANIM_P_HIT],
                                           PLAYER_ANIM_FPS[ANIM_P_HIT], 0);
                         tgt->etat = next;
+                        char_anim_set(&tgt->ca,
+                            next == PS_DEAD ? ANIM_DEATH : ANIM_HIT_REACT);
+                    }
+                    /* push the player away from the enemy that hit them */
+                    {
+                        EffectsSystem *efx = effects_global();
+                        int dirSign = (tgt->x >= e->x) ? 1 : -1;
+                        if (efx) {
+                            effects_on_hit(efx, EFX_ENT_PLAYER, targetIdx, dirSign);
+                            effects_spawn_impact(efx, tgt->x + tgt->w/2.0f,
+                                                      tgt->y + tgt->h/3.0f,
+                                                      dirSign, _dmg);
+                        }
                     }
                 }
                 e->etat = ES_WALK;
@@ -321,17 +458,22 @@ void ennemis_update(Ennemi *ennemis, int *nb, int wagonActif, float dt,
             continue;
         }
 
-        /* Walk toward nearest player */
         e->direction = (dx >= 0) ? 1 : -1;
-        if (dist > (float)rng) {
-            e->x += (dx > 0 ? 1.0f : -1.0f) * enemy_spd(e->type);
+        if (dist > 300.0f) {
+            animation_set_row(&e->anim, ANIM_E_WALK,
+                              enemy_nwalk(e->type), ENEMY_ANIM_FPS[ANIM_E_WALK], 1);
+        } else if (dist > (float)rng) {
+            float spd = enemy_spd(e->type);
+            /* The final boss is skipped above; the speed-mult call from
+             * the old AI has been removed (boss_ai handles its own movement). */
+            e->x += (dx > 0 ? 1.0f : -1.0f) * spd;
             if (e->x < WAGON_MUR_G_X) e->x = (float)WAGON_MUR_G_X;
             if (e->x + enemy_hbw(e->type) > WAGON_MUR_D_X)
                 e->x = (float)(WAGON_MUR_D_X - enemy_hbw(e->type));
             animation_set_row(&e->anim, ANIM_E_WALK,
                               enemy_nwalk(e->type), ENEMY_ANIM_FPS[ANIM_E_WALK], 1);
         } else {
-            if ((int)(now - e->lastAttackTick) >= (int)e->attackCooldownMs) {
+            if ((int)(now - e->lastAttackTick) >= 800) {
                 e->etat = ES_ATTACK;
                 animation_set_row(&e->anim, ANIM_E_ATTACK,
                                   enemy_natk(e->type), ENEMY_ANIM_FPS[ANIM_E_ATTACK], 0);
@@ -346,13 +488,20 @@ void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r, 
         Ennemi *e = &ennemis[i];
         if (!e->actif || e->wagon != wagonActif) continue;
 
+        /* Skip the final-boss enforcer: it is rendered by boss_anim_render
+         * from the caller (background.c) using the dedicated 7-row sprite
+         * sheet, and its HP is displayed in the boss HUD — so the default
+         * floating HP bar would also be redundant.  The boss is the unique
+         * ET_ENFORCER in the last wagon (background.c only spawns one). */
+        if (e->type == ET_ENFORCER && e->wagon == MAX_WAGONS - 1)
+            continue;
+
         SDL_Rect src = animation_get_src_rect(&e->anim);
         int dw = enemy_dw(e->type);
         int dh = enemy_dh(e->type);
         int hw = enemy_hbw(e->type);
         int hh = enemy_hbh(e->type);
 
-        /* Center sprite over hitbox, align bottom */
         SDL_Rect dst = {(int)e->x + ox + hw/2 - dw/2,
                         (int)e->y + hh - dh,
                         dw, dh};
@@ -372,7 +521,6 @@ void ennemis_afficher(Ennemi *ennemis, int nb, int wagonActif, SDL_Renderer *r, 
             SDL_RenderFillRect(r, &hb);
         }
 
-        /* Health bar */
         if (e->etat != ES_DEAD) {
             int maxhp  = enemy_maxhp(e->type);
             int filled = (e->hp * dw) / maxhp;

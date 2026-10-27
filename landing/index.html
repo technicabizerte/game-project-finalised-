@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Tailies — Five wagons. One revolt.</title>
+<meta name="description" content="The Tailies — a Snowpiercer-inspired side-scrolling action game built in C with SDL2. Fight through 5 train wagons from the frozen tail toward the engine.">
+<meta name="theme-color" content="#0d1219">
+
+<!-- Open Graph / social -->
+<meta property="og:title" content="The Tailies — Five wagons. One revolt.">
+<meta property="og:description" content="A Snowpiercer-inspired side-scrolling action game built in C with SDL2.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/logo.png">
+
+<!-- Inline SVG favicon: two wagons, one cold, one warm -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1219'/><rect x='5' y='13' width='9' height='9' fill='%23ffb347'/><rect x='18' y='13' width='9' height='9' fill='%235a9fd4'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+<!-- If JS is unavailable, never leave scroll-reveal content stuck invisible. -->
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+
+<!-- Defined in <head> so it exists when an <img onerror> fires during parse. -->
+<script>
+function imgFallback(img, label, icon){
+  const ph = document.createElement('div');
+  ph.className = 'img-ph';
+  ph.setAttribute('role','img');
+  ph.setAttribute('aria-label', img.alt || label);
+  ph.innerHTML =
+    '<span class="img-ph-icon">'+(icon||'🖼️')+'</span>' +
+    '<span class="img-ph-label">'+label+'</span>' +
+    '<span class="img-ph-hint">drop your image here</span>';
+  if (img.parentElement) img.parentElement.classList.add('has-ph');
+  img.replaceWith(ph);
+}
+</script>
+</head>
+<body>
+
+<!-- ambient overlays (pure CSS, no images) -->
+<div class="fx-grain" aria-hidden="true"></div>
+<div class="fx-vignette" aria-hidden="true"></div>
+
+<!-- ============================ HERO ============================ -->
+<header class="hero">
+  <div class="hero-inner container">
+    <img class="hero-logo reveal" src="assets/logo.png" alt="The Tailies logo"
+         onerror="imgFallback(this,'assets/logo.png','🚂')">
+    <p class="kicker reveal">A Snowpiercer-inspired revolt</p>
+    <h1 class="hero-title reveal"><span>THE</span> <span class="warm">TAILIES</span></h1>
+    <p class="tagline reveal">Five wagons. One revolt.</p>
+
+    <div class="hero-cta reveal">
+      <a class="btn-play" href="/play/" id="playBtn">▶&nbsp; PLAY NOW</a>
+      <p class="play-note" id="playNote" role="status" hidden>
+        🚧 The game build isn’t deployed at <code>/play/</code> yet — drop your
+        WASM build there and this button lights up.
+      </p>
+    </div>
+
+    <a class="scroll-hint" href="#about" aria-label="Scroll to learn more">▾</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ========================= DESCRIPTION ========================= -->
+<section id="about" class="section">
+  <div class="container narrow">
+    <p class="eyebrow reveal">// The story</p>
+    <div class="prose">
+      <p class="reveal">
+        <strong>The Tailies</strong> is a Snowpiercer-inspired side-scrolling action
+        game. You begin in the frozen squalor of the train’s tail section and fight
+        forward, wagon by wagon, toward the engine — and the unjust order that keeps
+        the last car starving in the cold.
+      </p>
+      <p class="reveal">
+        Five hand-built wagons stand between you and the front, each a different
+        world of privilege and each one defended. Master frame-by-frame melee and
+        ranged combat, choose your fighter and weapon, and break the chain of cars
+        one brutal battle at a time.
+      </p>
+      <p class="reveal">
+        It isn’t just a fight. It’s an argument about who the train was built for.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== FEATURES ========================== -->
+<section id="features" class="section section-alt">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="eyebrow">// What’s inside</p>
+      <h2 class="section-title">FEATURES</h2>
+    </header>
+
+    <div class="grid features">
+      <article class="card reveal">
+        <span class="card-icon">🎞️</span>
+        <h3>Smooth Combat</h3>
+        <p>Frame-by-frame animated sword &amp; axe combat with dashes, hit-stop and crunchy impact effects.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card-icon">⚔️</span>
+        <h3>Weapons &amp; Skins</h3>
+        <p>Pick your weapon — sword or axe — and your character skin before every run.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card-icon">🎮</span>
+        <h3>PvP &amp; Co-op</h3>
+        <p>Local two-player: face off in the versus arena or push through the campaign side by side.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card-icon">🤖</span>
+        <h3>Integrated AI</h3>
+        <p>Enemies generate their own taunts and a companion NPC chatbot answers you — live, in-game.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card-icon">🧩</span>
+        <h3>Puzzles &amp; Quizzes</h3>
+        <p>Solve wiring puzzles and answer quizzes between wagons to bank bonus points.</p>
+      </article>
+      <article class="card reveal">
+        <span class="card-icon">👑</span>
+        <h3>The Final Boss</h3>
+        <p>A brutal three-phase enforcer and a cinematic “You shall not pass” reveal.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ THEME ============================ -->
+<section id="theme" class="section">
+  <div class="container narrow">
+    <header class="section-head reveal">
+      <p class="eyebrow">// Why it matters</p>
+      <h2 class="section-title">THE THEME</h2>
+    </header>
+    <p class="theme-line reveal">
+      Every wagon you cross is a rung on the ladder of class — from the freezing
+      tail to the warm engine, the train is <em>inequality made into a machine</em>.
+    </p>
+    <ul class="pills reveal" aria-label="Themes and Sustainable Development Goals">
+      <li class="pill sdg10"><span class="pill-tag">SDG 10</span> Reduced Inequalities</li>
+      <li class="pill sdg13"><span class="pill-tag">SDG 13</span> Climate Action</li>
+      <li class="pill sdg16"><span class="pill-tag">SDG 16</span> Peace &amp; Justice</li>
+      <li class="pill"><span class="pill-tag">⚖️</span> Social Justice</li>
+      <li class="pill"><span class="pill-tag">✊</span> Class Struggle</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ========================= SCREENSHOTS ========================= -->
+<section id="screenshots" class="section section-alt">
+  <div class="container">
+    <header class="section-head reveal">
+      <p class="eyebrow">// From the cars</p>
+      <h2 class="section-title">SCREENSHOTS</h2>
+    </header>
+
+    <div class="gallery reveal">
+      <figure class="shot featured" tabindex="0">
+        <img src="screenshots/1.png" alt="The Tailies — screenshot 1"             onerror="imgFallback(this,'screenshots/1.png','📷')">
+      </figure>
+      <figure class="shot" tabindex="0">
+        <img src="screenshots/2.png" alt="The Tailies — screenshot 2"             onerror="imgFallback(this,'screenshots/2.png','📷')">
+      </figure>
+      <figure class="shot" tabindex="0">
+        <img src="screenshots/3.png" alt="The Tailies — screenshot 3"             onerror="imgFallback(this,'screenshots/3.png','📷')">
+      </figure>
+      <figure class="shot" tabindex="0">
+        <img src="screenshots/4.png" alt="The Tailies — screenshot 4"             onerror="imgFallback(this,'screenshots/4.png','📷')">
+      </figure>
+      <figure class="shot" tabindex="0">
+        <img src="screenshots/5.png" alt="The Tailies — screenshot 5"             onerror="imgFallback(this,'screenshots/5.png','📷')">
+      </figure>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <p class="footer-team">THE TAILIES</p>
+    <div class="footer-badges">
+      <span class="badge">🛠️ Built in C with SDL2</span>
+      <span class="badge badge-gold">🏆 2nd place — out of 200 teams</span>
+    </div>
+    <p class="footer-fine">Five wagons. One revolt.</p>
+  </div>
+</footer>
+
+<!-- ====================== LIGHTBOX (screenshots) ====================== -->
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+/* ---- PLAY NOW: navigate to /play/, graceful note if not deployed ---- */
+(function(){
+  const btn  = document.getElementById('playBtn');
+  const note = document.getElementById('playNote');
+  btn.addEventListener('click', async function(e){
+    e.preventDefault();
+    btn.classList.add('is-checking');
+    let ok = false;
+    try { const r = await fetch('/play/', {method:'HEAD'}); ok = r.ok; }
+    catch(_) { ok = false; }
+    btn.classList.remove('is-checking');
+    if (ok) { window.location.href = '/play/'; }
+    else { note.hidden = false; note.classList.add('show'); }
+  });
+})();
+
+/* ---- scroll reveal (skipped if reduced motion) ---------------------- */
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in-view'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add('in-view'); io.unobserve(en.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
+  items.forEach(el => io.observe(el));
+  /* safety net: if anything is ever missed, never leave it invisible */
+  window.addEventListener('load', () => setTimeout(() => {
+    document.querySelectorAll('.reveal:not(.in-view)').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) el.classList.add('in-view');
+    });
+  }, 1200));
+})();
+
+/* ---- minimal lightbox for real screenshots -------------------------- */
+(function(){
+  const lb    = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightboxImg');
+  const close = document.getElementById('lightboxClose');
+  function open(src, alt){ lbImg.src = src; lbImg.alt = alt || ''; lb.hidden = false; }
+  function hide(){ lb.hidden = true; lbImg.src = ''; }
+  document.querySelectorAll('.shot').forEach(fig => {
+    fig.addEventListener('click', () => {
+      const img = fig.querySelector('img');     // null once replaced by placeholder
+      if (img && img.currentSrc) open(img.currentSrc, img.alt);
+    });
+    fig.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fig.click(); }
+    });
+  });
+  close.addEventListener('click', hide);
+  lb.addEventListener('click', (e) => { if (e.target === lb) hide(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+})();
+</script>
+</body>
+</html>

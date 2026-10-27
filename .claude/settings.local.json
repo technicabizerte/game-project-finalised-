@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(make clean *)",
-      "Bash(make)"
+      "Bash(make)",
+      "Bash(awk 'NR==478' \"/home/adem-dilou/.claude/projects/-home-adem-dilou-Downloads-hajer-tache-6--hajer-tache-tache/00eb4366-329a-4864-8b5f-f3242654af43.jsonl\")"
     ]
   }
 }

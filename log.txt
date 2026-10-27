@@ -1,0 +1,5 @@
+[llm] launched server pid=101827, waiting for http://127.0.0.1:8080 ...
+[llm] server ready
+[arduino] open /dev/ttyUSB0: No such file or directory (controller disabled)
+[mouse] state: logicalSize=800x520  scale=(0.975,0.975)  viewport=10,0,799,519  | sample window=(254,408) -> logical=(250.3,418.5)
+[mouse] state: logicalSize=800x520  scale=(1.108,1.108)  viewport=62,0,799,519  | sample window=(277,315) -> logical=(187.8,284.4)

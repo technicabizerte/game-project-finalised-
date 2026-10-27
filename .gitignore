@@ -1,0 +1,12 @@
+# Build directories and compiled binaries
+build/
+jeu
+*.o
+
+# Log files and temporary records
+*.log
+log.txt
+
+# OS-specific metadata
+.DS_Store
+Thumbs.db

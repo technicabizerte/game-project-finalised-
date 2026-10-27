@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make *)",
+      "Bash(make)",
+      "Bash(./enigme2)",
+      "Read(//home/adem-dilou/attempt4/attempt/**)",
+      "Read(//home/adem-dilou/attempt4/**)",
+      "Bash(sed *)",
+      "Bash(find *)",
+      "Bash(readfile *)",
+      "Read(//home/adem-dilou/ROTOZOOM/attempt/assets/**)",
+      "Read(//home/adem-dilou/ROTOZOOM/attempt/**)"
+    ]
+  },
+  "$version": 3
+}

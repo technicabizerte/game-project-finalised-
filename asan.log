@@ -1,0 +1,3 @@
+[llm] launched server pid=16039, waiting for http://127.0.0.1:8080 ...
+[llm] server ready
+[arduino] open /dev/ttyUSB0: No such file or directory (controller disabled)
